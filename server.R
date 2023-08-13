@@ -1,8 +1,10 @@
 server = function(input, output, session) {
 
-  message(Sys.time(), ': User Connected. Loading config file.', appendLF = F)
+  add.log('New session created. Loading source files.')
   source('config.R')
-  message(' Done.')
+  source('functions.R')
+  add.log('Done loading source files.')
+
 
   ## Initialize log if does not exist.
   if (!file.exists('log/log.json')) {
@@ -13,24 +15,10 @@ server = function(input, output, session) {
 
     writeLines(jsonlite::toJSON(tmp), 'log/log.json')
   }
-
-  ## Take log entry message and write it to JSON log file.
-  write.json = function(filename, entry) {
-
-    dat = jsonlite::toJSON(entry)
-
-    file.copy(from = filename, to = paste0(filename, ' ', gsub(':', '', Sys.time()), '.old'))
-
-    ## Write entry.
-    f = file(description = filename, open = 'a')
-    writeLines(dat, con = f)
-    close(f)
-
-    shiny::showNotification(ui = 'Event Logged', duration = 5, type = 'message')
-  }
-
+  add.log('Initialization finished.')
 
   clear = function() {
+    add.log('Clearing user input fields.')
     updateTextInput(inputId = "entry", value = "")
 
     updateSelectInput(inputId = 'author', selected = F)
@@ -52,35 +40,14 @@ server = function(input, output, session) {
     }
   )
 
-  ## Parse json log entries into data.frame
-  parse.log = function(json) {
-    log = blank.entry(length(json))
-
-    for (i in 1:length(json)) {
-      for (n in names(json[[i]])) {
-        if (n %in% names(log) & length(json[[i]][[n]]) > 0) {
-          log[i,n] = json[[i]][[n]]
-        }
-      }
-    }
-
-    log
-  }
-
 
   observeEvent(
     input$enter,
     {
       id = digest::digest(Sys.time(), algo = 'crc32')
-      message(Sys.time(), ': Logging CTD Event ', id)
+      add.log(paste('Logging user event', id,'.'))
       file = 'log/log.json'
 
-      if (!file.exists(file)) {
-        file.create(file)
-      }
-
-      ## Format Data
-      # "Datetime; Cast; Station; Depth; Instrument; Action; Author; Note;"
       entry = list(ID = id,
                   Time = format(Sys.time()),
                   Station = toupper(input$stn),
@@ -92,46 +59,52 @@ server = function(input, output, session) {
                   Notes = input$entry
                   )
 
-      ## Write to main log:
       write.json(filename = 'log/log.json', entry = entry)
 
-      clear()
+      if (input$action == settings$final.action) {
+        clear()
+      } else {
+        add.log('Incremeting action item selection.')
+        i = which(input$action == actions)
+        updateRadioGroupButtons(inputId = 'action', selected = actions[i+1])
+      }
     })
 
 
 
   #### Outputs
 
-  output$currentTime = renderText({
-    invalidateLater(1000, session)
-    paste(format(Sys.time()), ' (system)')
-  })
+  output$currentTime = renderText(
+    {
+      invalidateLater(1000, session)
+      paste(format(Sys.time()), ' (system)')
+    })
 
 
-  output$currentTime.local = renderText({
-    invalidateLater(1000, session)
-    paste(format(Sys.time()-8*3600), ' (local)')
-  })
+  output$currentTime.local = renderText(
+    {
+      invalidateLater(1000, session)
+      paste(format(Sys.time()-8*3600), ' (local)')
+    })
 
-  output$events = renderDataTable({
-    tmp = readLines('log/log.json')
-    tmp = lapply(tmp, jsonlite::fromJSON)
-    tmp = parse.log(tmp)
-
-    tmp
-  })
+  output$events = renderDataTable(
+    {
+      tmp = load.log('log/log.json')
+      parse.log(tmp)
+    })
 
 
-  output$recent = renderTable({
-    invalidateLater(1000*5)
+  output$recent = renderTable(
+    {
+      invalidateLater(1000*5)
 
-    tmp = readLines('log/log.json')
-    tmp = lapply(tmp, jsonlite::fromJSON)
-    tmp = parse.log(tmp)
+      tmp = load.log('log/log.json')
+      tmp = parse.log(tmp)
 
-    tmp = tmp[,c('Time', 'Station', 'Instrument', 'Action')]
-    head(tmp, 8)
-  })
+      tmp = tmp[,c('Time', 'Station', 'Instrument', 'Action')]
+      tmp$Time = paste(tmp$Time)
+      head(tmp, 8)
+    })
 
 
 
@@ -142,8 +115,8 @@ server = function(input, output, session) {
         paste0('ShipLogger ', gsub(':', '', format(Sys.time())), '.csv')
       },
     content = function (file) {
-      tmp = readLines('log/log.json')
-      tmp = lapply(tmp, jsonlite::fromJSON)
+      add.log('Preparing csv download.')
+      tmp = load.log('log/log.json')
       tmp = parse.log(tmp)
 
       write.csv(tmp, file)
@@ -155,8 +128,8 @@ server = function(input, output, session) {
       paste0('ShipLogger ', gsub(':', '', format(Sys.time())), '.xlsx')
     },
     content = function (file) {
-      tmp = readLines('log/log.json')
-      tmp = lapply(tmp, jsonlite::fromJSON)
+      add.log('Preparing xlsx download.')
+      tmp = load.log('log/log.json')
       tmp = parse.log(tmp)
 
       openxlsx::write.xlsx(tmp, file)
@@ -169,6 +142,7 @@ server = function(input, output, session) {
       paste0('ShipLogger ', gsub(':', '', format(Sys.time())), '.json')
     },
     content = function (file) {
+      add.log('Preparing JSON download.')
       tmp = readLines('log/log.json')
       writeLines(tmp, file)
     })

@@ -41,8 +41,7 @@ ui = fluidPage(
             column(
               width = 2,
               shiny::textInput("cast", label = 'Cast', width = '10em'),
-              shiny::textInput("stn", label = 'Station', width = '10em'),
-              shiny::textInput("bottom", label = 'Bottom Depth', width = '10em')
+              shiny::textInput("stn", label = 'Station', width = '10em')
             ),
             column(
               width = 10,

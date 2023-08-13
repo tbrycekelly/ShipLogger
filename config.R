@@ -5,7 +5,8 @@
 
 settings = list(
   update.frequency = 5, #sec
-  nmea.address = "0.0.0.0:1234"
+  nmea.address = "0.0.0.0:1234",
+  final.action = 'Recover'
 )
 
 
