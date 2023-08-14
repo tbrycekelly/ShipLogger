@@ -28,7 +28,9 @@ instruments = c(
 instruments = instruments[order(instruments)]
 
 
-
+# The order of actions is important. The selection will auto increment from the first one until
+# the final.action is logged (as set above in settings). When this happens all user input will
+# be cleared.
 actions = c(
   'Deploy',
   "Recover",
@@ -68,19 +70,7 @@ authors = authors[order(authors)]
 
 
 
-blank.entry = function(n) {
-  data.frame(
-    ID  = rep(digest::digest(Sys.time(), algo = 'crc32'), n),
-    Cruise = 'current cruise',
-    Time = Sys.time(),
-    Station = NA,
-    Cast = NA,
-    Instrument = NA,
-    Action = NA,
-    Author = NA,
-    Notes = NA
-  )
-}
+
 
 
 

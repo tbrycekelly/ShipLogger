@@ -1,5 +1,20 @@
 
 
+blank.entry = function(n) {
+  data.frame(
+    ID  = rep(digest::digest(Sys.time(), algo = 'crc32'), n),
+    Cruise = 'current cruise',
+    Time = NA,
+    Station = NA,
+    Cast = NA,
+    Instrument = NA,
+    Action = NA,
+    Author = NA,
+    Notes = NA
+  )
+}
+
+
 ## Take log entry message and write it to JSON log file.
 write.json = function(filename, entry) {
 
@@ -16,6 +31,7 @@ write.json = function(filename, entry) {
 }
 
 
+
 ## Parse json log entries into data.frame
 parse.log = function(json) {
   log = blank.entry(length(json))
@@ -28,13 +44,17 @@ parse.log = function(json) {
     }
   }
 
+  ## Remove edits
+  log = log[nrow(log):1,]
+  log = log[!duplicated(log$ID),]
+
   log
 }
 
 
 load.log = function(file = 'log/log.json') {
   tmp = readLines(file)
-  lapply(tmp, jsonlite::fromJSON)
+  lapply(tmp, function(x) {jsonlite::fromJSON(x, simplifyDataFrame = F)})
 }
 
 

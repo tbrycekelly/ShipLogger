@@ -2,6 +2,7 @@ library(shiny)
 library(shinyWidgets)
 library(jsonlite)
 library(data.table)
+library(DT)
 
 
 # Run App

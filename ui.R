@@ -74,22 +74,20 @@ ui = fluidPage(
           fluidRow(
             actionButton('enter', label = 'Enter'),
             actionButton('clear.enter', label = 'Reset')
-          )
+          ),
 
-        ), # tabPanel
-
-
-
-        tabPanel(
-          "Events",
+          ## Dataframe
           fluidRow(
             column(
               width = 12,
+              hr(),
+              h2('Events'),
               br(),
               dataTableOutput("events")
             )
           )
-        )
+
+        ) # tabPanel
       ) # tabsetPanel
     ) # mainPanel
   ) # sidebarLayout

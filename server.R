@@ -12,6 +12,7 @@ server = function(input, output, session) {
     tmp$Instrument = 'System'
     tmp$Action = 'Start'
     tmp$Notes = 'Initialized ShipLogger.'
+    tmp = as.list(tmp)
 
     writeLines(jsonlite::toJSON(tmp), 'log/log.json')
   }
@@ -49,7 +50,7 @@ server = function(input, output, session) {
       file = 'log/log.json'
 
       entry = list(ID = id,
-                  Time = format(Sys.time()),
+                  Time = paste0(format(Sys.time())),
                   Station = toupper(input$stn),
                   Cast = input$cast,
                   Depth = input$bottom,
@@ -71,6 +72,29 @@ server = function(input, output, session) {
     })
 
 
+  ## Preserve edits
+  observeEvent(
+    input$events_cell_edit,
+    {
+      row  <- input$events_cell_edit$row
+      col <- input$events_cell_edit$col
+      add.log(paste('Entry modified at', row, col,'.'))
+      tmp = load.log('log/log.json')
+      tab = parse.log(tmp)
+      for (i in length(tmp):1) {
+        if (tab$ID[row] == tmp[[i]]$ID) {
+
+          entry = tmp[[i]]
+          n = names(tab)[col]
+          entry[[n]] = input$events_cell_edit$value
+          write.json('log/log.json', entry)
+          add.log(paste('Original entry found. Appending updates for parameter', n, 'with value', input$events_cell_edit$value))
+          return()
+        }
+      }
+    })
+
+
 
   #### Outputs
 
@@ -87,10 +111,10 @@ server = function(input, output, session) {
       paste(format(Sys.time()-8*3600), ' (local)')
     })
 
-  output$events = renderDataTable(
+  output$events = renderDT(
     {
       tmp = load.log('log/log.json')
-      parse.log(tmp)
+      DT::datatable(parse.log(tmp), editable = T)
     })
 
 
@@ -102,7 +126,6 @@ server = function(input, output, session) {
       tmp = parse.log(tmp)
 
       tmp = tmp[,c('Time', 'Station', 'Instrument', 'Action')]
-      tmp$Time = paste(tmp$Time)
       head(tmp, 8)
     })
 
