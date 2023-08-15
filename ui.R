@@ -12,10 +12,9 @@ ui = fluidPage(
       h6("Current time: "),
       h4(textOutput("currentTime", container = span)),
       h4(textOutput("currentTime.local", container = span)),
+      h4(textOutput("lat", container = span)),
+      h4(textOutput("lon", container = span)),
       br(),br(),
-      p("Recently submitted events: "),
-      tableOutput("recent"),
-      br(),
       hr(),
       fluidRow(
         h2('Export:'),

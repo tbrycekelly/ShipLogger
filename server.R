@@ -51,6 +51,8 @@ server = function(input, output, session) {
 
       entry = list(ID = id,
                   Time = paste0(format(Sys.time())),
+                  Lon = position()$lon,
+                  Lat = position()$lat,
                   Station = toupper(input$stn),
                   Cast = input$cast,
                   Depth = input$bottom,
@@ -96,6 +98,44 @@ server = function(input, output, session) {
 
 
 
+  position = reactive({
+    invalidateLater(settings$nmea.update)
+
+    tmp = c()
+    tryCatch({
+      gps = socketConnection(host = settings$nmea.host, port = settings$nmea.port)
+      Sys.sleep(2)
+      tmp = readLines(gps, n = 30)
+      close(gps)
+
+      tmp = tmp[grepl('GPGGA', tmp)]
+    }, error = function(e) {
+      add.log('Unable to parse GPS feed. Check NMEA settings if problem persists.')
+    }, warning = function(w) {
+      # Do nothing.
+    }
+    )
+
+
+    if (length(tmp) > 0) {
+      add.log(paste('Received', length(tmp), ' NMEA sentances from GPS feed.'))
+      tmp = strsplit(tmp, ',')
+
+      lat.raw = tmp[[1]][3]
+      lon.raw = tmp[[1]][5]
+
+      lat = as.numeric(substr(lat.raw, 1, nchar(lat.raw) - 7)) + as.numeric(substr(lat.raw, nchar(lat.raw)-6, nchar(lat.raw)))/60
+      lon = as.numeric(substr(lon.raw, 1, nchar(lon.raw) - 7)) + as.numeric(substr(lon.raw, nchar(lon.raw)-6, nchar(lon.raw)))/60
+    } else {
+      lat = NA
+      lon = NA
+    }
+
+    list(lon = lon, lat = lat)
+  })
+
+
+
   #### Outputs
 
   output$currentTime = renderText(
@@ -110,6 +150,16 @@ server = function(input, output, session) {
       invalidateLater(1000, session)
       paste(format(Sys.time()-8*3600), ' (local)')
     })
+
+
+  output$lon = renderText(
+    paste0('Lon: ', round(position()$lon, digits = 4), ' W')
+  )
+
+
+  output$lat = renderText(
+    paste0('Lat: ', round(position()$lat, digits = 4), ' N')
+  )
 
   output$events = renderDT(
     {

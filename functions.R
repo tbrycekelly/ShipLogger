@@ -5,6 +5,8 @@ blank.entry = function(n) {
     ID  = rep(digest::digest(Sys.time(), algo = 'crc32'), n),
     Cruise = 'current cruise',
     Time = NA,
+    Lon = NA,
+    Lat = NA,
     Station = NA,
     Cast = NA,
     Instrument = NA,

@@ -5,8 +5,13 @@
 
 settings = list(
   update.frequency = 5, #sec
-  nmea.address = "0.0.0.0:1234",
-  final.action = 'Recover'
+  nmea.host = "0.0.0.0",
+  nmea.port = 1000,
+  nmea.port = "com5",
+  nmea.baud = "9600",
+  nmea.update = 10, #sec
+  final.action = 'Recover',
+
 )
 
 
