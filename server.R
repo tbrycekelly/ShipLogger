@@ -65,6 +65,7 @@ server = function(input, output, session) {
       write.json(filename = 'log/log.json', entry = entry)
 
       if (input$action == settings$final.action) {
+        beepr::beep(3)
         clear()
       } else {
         add.log('Incremeting action item selection.')

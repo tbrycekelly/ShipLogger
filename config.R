@@ -10,7 +10,7 @@ settings = list(
   nmea.port = "com5",
   nmea.baud = "9600",
   nmea.update = 10, #sec
-  final.action = 'Recover',
+  final.action = 'Recover'
 
 )
 
