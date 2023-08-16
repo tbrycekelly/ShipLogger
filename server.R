@@ -1,9 +1,9 @@
 server = function(input, output, session) {
 
-  add.log('New session created. Loading source files.')
+
   source('config.R')
   source('functions.R')
-  add.log('Done loading source files.')
+  add.log('New session created. Loaded source files.')
 
 
   ## Initialize log if does not exist.
@@ -16,6 +16,18 @@ server = function(input, output, session) {
 
     writeLines(jsonlite::toJSON(tmp), 'log/log.json')
   }
+
+  if (!file.exists('log/position.csv')) {
+    writeLines("time,lon,lat", 'log/position.csv')
+  }
+
+  log = reactive({
+    input$enter
+    input$clear.enter
+    input$refresh
+    load.log('log/log.json')
+  })
+
   add.log('Initialization finished.')
 
   clear = function() {
@@ -65,7 +77,6 @@ server = function(input, output, session) {
       write.json(filename = 'log/log.json', entry = entry)
 
       if (input$action == settings$final.action) {
-        beepr::beep(3)
         clear()
       } else {
         add.log('Incremeting action item selection.')
@@ -82,7 +93,7 @@ server = function(input, output, session) {
       row  <- input$events_cell_edit$row
       col <- input$events_cell_edit$col
       add.log(paste('Entry modified at', row, col,'.'))
-      tmp = load.log('log/log.json')
+      tmp = log()
       tab = parse.log(tmp)
       for (i in length(tmp):1) {
         if (tab$ID[row] == tmp[[i]]$ID) {
@@ -96,7 +107,6 @@ server = function(input, output, session) {
         }
       }
     })
-
 
 
   position = reactive({
@@ -127,6 +137,8 @@ server = function(input, output, session) {
 
       lat = as.numeric(substr(lat.raw, 1, nchar(lat.raw) - 7)) + as.numeric(substr(lat.raw, nchar(lat.raw)-6, nchar(lat.raw)))/60
       lon = as.numeric(substr(lon.raw, 1, nchar(lon.raw) - 7)) + as.numeric(substr(lon.raw, nchar(lon.raw)-6, nchar(lon.raw)))/60
+
+      write.csv(data.frame(time = Sys.time(), lon = lon, lat = lat), file = 'log/position.csv', append = T)
     } else {
       lat = NA
       lon = NA
@@ -134,6 +146,8 @@ server = function(input, output, session) {
 
     list(lon = lon, lat = lat)
   })
+
+
 
 
 
@@ -164,8 +178,7 @@ server = function(input, output, session) {
 
   output$events = renderDT(
     {
-      tmp = load.log('log/log.json')
-      DT::datatable(parse.log(tmp), editable = T)
+      DT::datatable(parse.log(log()), editable = T)
     })
 
 
@@ -173,9 +186,7 @@ server = function(input, output, session) {
     {
       invalidateLater(1000*5)
 
-      tmp = load.log('log/log.json')
-      tmp = parse.log(tmp)
-
+      tmp = parse.log(log())
       tmp = tmp[,c('Time', 'Station', 'Instrument', 'Action')]
       head(tmp, 8)
     })
@@ -190,7 +201,7 @@ server = function(input, output, session) {
       },
     content = function (file) {
       add.log('Preparing csv download.')
-      tmp = load.log('log/log.json')
+      tmp = log()
       tmp = parse.log(tmp)
 
       write.csv(tmp, file)
@@ -203,7 +214,7 @@ server = function(input, output, session) {
     },
     content = function (file) {
       add.log('Preparing xlsx download.')
-      tmp = load.log('log/log.json')
+      tmp = log()
       tmp = parse.log(tmp)
 
       openxlsx::write.xlsx(tmp, file)
@@ -219,6 +230,17 @@ server = function(input, output, session) {
       add.log('Preparing JSON download.')
       tmp = readLines('log/log.json')
       writeLines(tmp, file)
+    })
+
+
+  output$download.pos = downloadHandler(
+    filename = function() {
+      paste0('ShipLogger Position Record ', gsub(':', '', format(Sys.time())), '.xlsx')
+    },
+    content = function (file) {
+      add.log('Preparing Positions download.')
+      tmp = read.csv('log/position.csv')
+      openxlsx::write.xlsx(tmp, file)
     })
 
 

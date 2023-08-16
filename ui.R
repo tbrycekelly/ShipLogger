@@ -21,6 +21,10 @@ ui = fluidPage(
         downloadButton('download.csv', label = 'CSV'),
         downloadButton('download.xlsx', label = 'XLSX'),
         downloadButton('download.json', label = 'JSON')
+      ),
+      fluidRow(
+        br(),
+        downloadButton('download.pos', label = 'Positions')
       )
     ),
 
@@ -28,13 +32,8 @@ ui = fluidPage(
     mainPanel = mainPanel(
       #width = 12,
 
-      tabsetPanel(
-        type = 'tabs',
-
-        ## Operations
-        tabPanel(
           title = "Operations",
-          h2("Over-the-side Events"),
+          h2("Event Log"),
 
           fluidRow(
             column(
@@ -72,7 +71,8 @@ ui = fluidPage(
           ## Buttons
           fluidRow(
             actionButton('enter', label = 'Enter'),
-            actionButton('clear.enter', label = 'Reset')
+            actionButton('clear.enter', label = 'Reset'),
+            actionButton('refresh', label = 'Refresh', icon = icon('arrows-rotate'))
           ),
 
           ## Dataframe
@@ -80,14 +80,10 @@ ui = fluidPage(
             column(
               width = 12,
               hr(),
-              h2('Events'),
               br(),
               dataTableOutput("events")
             )
           )
-
-        ) # tabPanel
-      ) # tabsetPanel
     ) # mainPanel
   ) # sidebarLayout
 )
