@@ -5,78 +5,42 @@
 
 settings = list(
   update.frequency = 5, #sec
-  nmea.host = "0.0.0.0",
-  nmea.port = 1000,
+  #nmea.host = "0.0.0.0", # Not setup yet
+  #nmea.port = 1000, # Not setup yet
   nmea.port = "com5",
   nmea.baud = "9600",
   nmea.update = 10, #sec
-  final.action = 'Recover'
-
+  final.action = 'Recover',
+  local.timezone = -8
 )
 
 
 ## instrument List
-# A list of instruments available in the drop down menu
-instruments = c(
-  '',
-  'Bongo Net',
-  "Calvet Net",
-  'CTD',
-  'DPI',
-  'Iron Fish',
-  'Methot',
-  'MultiNet',
-  'Sediment Trap',
-  'TM CTD',
-  'Mooring'
-)
-instruments = instruments[order(instruments)]
-
-
+# A list of instruments available in the drop down menu along with associated actions (in order)
 # The order of actions is important. The selection will auto increment from the first one until
 # the final.action is logged (as set above in settings). When this happens all user input will
 # be cleared.
-actions = c(
-  'Deploy',
-  "Recover",
-  'Abort'
-)
+instruments = list()
+
+instruments[['Bongo Net']] =    c('Deploy', 'At Depth', "Recover", 'Abort')
+instruments[["Calvet Net"]] =   c('Deploy', "Recover", 'Abort')
+instruments[['CTD']] =          c('Deploy', "Recover", 'Abort', 'At Depth')
+instruments[['DPI']] =          c('Deploy', "Recover", 'Abort')
+instruments[['Iron Fish']] =    c('Deploy', "Recover", 'Abort')
+instruments[['Methot']] =       c('Deploy', 'At Depth', "Recover", 'Abort')
+instruments[['Mooring']] =      c('Deploy', "Recover", 'Abort')
+instruments[['MultiNet']] =     c('Deploy', 'At Depth', "Recover", 'Abort')
+instruments[['Sediment Trap']] = c('Deploy', "Recover", 'Abort')
+instruments[['TM CTD']] =       c('Deploy', "Recover", 'Abort', 'At Depth')
+instruments[['VertMultiNet']] = c('Deploy', "Recover", 'Abort')
 
 
 authors = c(
   '',
-  'Caitlin Smoot <casmoot@alaska.edu>',
-  'Ana Aguilar-Islas <amaguilarislas@alaska.edu>',
-  'Sierra Lloyd <sierravlloyd@gmail.com>',
-  'Gwenn Hennon <gmhennon@alaska.edu>',
-  'Megan Brauner <mbrauner@alaska.edu>',
-  'Dan Cushing <dan.cushing@gmail.com>',
-  'Suzanne Strom <stroms@wwu.edu>',
-  'Kerri Fredrickson <frederk@wwu.edu>',
-  'willi359@wwu.edu',
-  'Jaime Blais <blaisj@wwu.edu>',
-  'Hannah Kepner <hekepner@alaska.edu>',
-  'Cara Roberts <cjkoutchak@alaska.edu>',
-  'Alexia Wolff <Alexia.g.b.wolff@gmail.com>',
-  'Thomas Kelly <tbkelly@alaska.edu>',
-  'Xavier Warren <warren.xavierj@gmail.com>',
-  'Nicole Webster <nmwebster@alaska.edu>',
-  'troutjac@grinnell.edu',
-  'Abigail VanPelt <Abigail.Lee.VanPelt@live.mercer.edu>',
-  'ballantk@oregonstate.edu',
-  'ajmarvy@reed.edu',
-  'Addie Norgaard <anorgaard2@alaska.edu>',
-  'Russell Hopcroft <rrhopcroft@alaska.edu>',
-  'Hana Busse <hana.busse@gmail.com>',
-  'Ryan Owens <rpowens@alaska.edu>'
+  'Person1',
+  'Person2',
+  'Person3'
 )
 
 authors = authors[order(authors)]
-
-
-
-
-
-
-
 

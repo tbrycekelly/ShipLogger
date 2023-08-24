@@ -18,7 +18,7 @@ server = function(input, output, session) {
   }
 
   if (!file.exists('log/position.csv')) {
-    writeLines("time,lon,lat", 'log/position.csv')
+    writeLines("time,gps.time,lon,lat", 'log/position.csv')
   }
 
   log = reactive({
@@ -33,16 +33,12 @@ server = function(input, output, session) {
   clear = function() {
     add.log('Clearing user input fields.')
     updateTextInput(inputId = "entry", value = "")
-
     updateSelectInput(inputId = 'author', selected = F)
     updateSelectInput(inputId = 'instrument', selected = F)
-
     updateTextInput(inputId = "stn", value = "")
     updateTextInput(inputId = "cast", value = "")
     updateTextInput(inputId = "bottom", value = "")
-
     updateRadioGroupButtons(inputId = 'action', selected = F)
-
   }
 
 
@@ -80,8 +76,8 @@ server = function(input, output, session) {
         clear()
       } else {
         add.log('Incremeting action item selection.')
-        i = which(input$action == actions)
-        updateRadioGroupButtons(inputId = 'action', selected = actions[i+1])
+        i = which(input$action == instruments[[input$instrument]])
+        updateRadioGroupButtons(inputId = 'action', selected = instruments[[input$instrument]][i+1])
       }
     })
 
@@ -97,7 +93,6 @@ server = function(input, output, session) {
       tab = parse.log(tmp)
       for (i in length(tmp):1) {
         if (tab$ID[row] == tmp[[i]]$ID) {
-
           entry = tmp[[i]]
           n = names(tab)[col]
           entry[[n]] = input$events_cell_edit$value
@@ -108,9 +103,16 @@ server = function(input, output, session) {
       }
     })
 
+  observeEvent(
+    input$instrument,
+    {
+      updateRadioGroupButtons(inputId = 'action', choices = instruments[[input$instrument]])
+    }
+  )
+
 
   position = reactive({
-    invalidateLater(settings$nmea.update)
+    invalidateLater(settings$nmea.update*1000)
 
     tmp = c()
     tryCatch({
@@ -127,28 +129,25 @@ server = function(input, output, session) {
     }
     )
 
-
-    if (length(tmp) > 0) {
-      add.log(paste('Received', length(tmp), ' NMEA sentances from GPS feed.'))
-      tmp = strsplit(tmp, ',')
-
-      lat.raw = tmp[[1]][3]
-      lon.raw = tmp[[1]][5]
-
-      lat = as.numeric(substr(lat.raw, 1, nchar(lat.raw) - 7)) + as.numeric(substr(lat.raw, nchar(lat.raw)-6, nchar(lat.raw)))/60
-      lon = as.numeric(substr(lon.raw, 1, nchar(lon.raw) - 7)) + as.numeric(substr(lon.raw, nchar(lon.raw)-6, nchar(lon.raw)))/60
-
-      write.csv(data.frame(time = Sys.time(), lon = lon, lat = lat), file = 'log/position.csv', append = T)
-    } else {
-      lat = NA
-      lon = NA
+    # Catch no message condition:
+    if (length(tmp) < 1) {
+      return(list(lon = NA, lat = NA))
     }
+
+    add.log(paste('Received', length(tmp), ' NMEA sentances from GPS feed.'))
+    tmp = strsplit(tmp, ',')
+
+    time.raw = tmp[[1]][2]
+    lat.raw = tmp[[1]][3]
+    lon.raw = tmp[[1]][5]
+
+    lat = as.numeric(substr(lat.raw, 1, nchar(lat.raw) - 7)) + as.numeric(substr(lat.raw, nchar(lat.raw)-6, nchar(lat.raw)))/60
+    lon = as.numeric(substr(lon.raw, 1, nchar(lon.raw) - 7)) + as.numeric(substr(lon.raw, nchar(lon.raw)-6, nchar(lon.raw)))/60
+
+    write.csv(data.frame(time = Sys.time(), gps.time = time.raw, lon = lon, lat = lat), file = 'log/position.csv', append = T)
 
     list(lon = lon, lat = lat)
   })
-
-
-
 
 
   #### Outputs
@@ -163,7 +162,7 @@ server = function(input, output, session) {
   output$currentTime.local = renderText(
     {
       invalidateLater(1000, session)
-      paste(format(Sys.time()-8*3600), ' (local)')
+      paste(format(Sys.time() + settings$local.timezone*3600), ' (local)')
     })
 
 
@@ -178,7 +177,8 @@ server = function(input, output, session) {
 
   output$events = renderDT(
     {
-      DT::datatable(parse.log(log()), editable = T)
+      tmp = parse.log(log())
+      DT::datatable(tmp[order(tmp$Time),], editable = T, filter = 'top', rownames = F)
     })
 
 

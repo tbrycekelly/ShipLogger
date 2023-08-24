@@ -45,7 +45,7 @@ ui = fluidPage(
               width = 10,
               shiny::selectInput("instrument",
                                  label = 'Instrument',
-                                 choices = instruments,
+                                 choices = names(instruments),
                                  width = '35em'),
               textInput("entry", label = 'Entry Comments',
                         width = '35em'),
@@ -63,7 +63,7 @@ ui = fluidPage(
               width = 9,
               radioGroupButtons("action",
                                  label = 'Actions Performed',
-                                 choices = actions)
+                                 choices = '')
               )
             ),
           br(),
