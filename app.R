@@ -4,6 +4,7 @@ library(jsonlite)
 library(data.table)
 library(DT)
 library(serial)
+library(openxlsx)
 
 source('config.R')
 source('functions.R')

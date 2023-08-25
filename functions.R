@@ -1,3 +1,10 @@
+library(shiny)
+library(shinyWidgets)
+library(jsonlite)
+library(data.table)
+library(DT)
+library(serial)
+library(openxlsx)
 
 
 blank.entry = function(n) {

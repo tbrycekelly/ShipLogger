@@ -1,6 +1,6 @@
 # ShipLogger
 
-#### Getting Started
+### Getting Started
 
 ShipLogger requires the following R packages to be installed:
 
@@ -32,6 +32,30 @@ But before you do that, you should take a look at the `config.R` file where all 
     )
 
 For initial setup, the appropriate cruise name should be provided. For position information, specify if you are using a _serial_ or _tcp_ connection with your GPS repreater. Next provide the respective configuration information for either the serial or tcp connection. The default `nmea.update` interval of 10 seconds is likely appropriate. The `final.action` name specified at which point the log should reset rather than increment actions. For example, recovery of the CTD usually (and hopefully) follows the deployment of the CTD, so after a CTD deployment event, the appropriate metadata in the form is preserved for the recovery event. Finally, the system time (hopefully UTC!) to local time offset can be given (-8 is UTC-8). 
+
+The next section of the configuration is for setting up the instruments and the actions associated with them. To edit or add an instrument or action, simply add a new list entry or modify the list of actions associated with it. See the __Actions__ section below.
+
+
+#### Actions
+
+Custom instruments, and the actions associated with them, are easily added in `config.R`. A typical entry will follow this scheme:
+
+    instruments[[<instrument name>]] = c('<action1>', '<action2>', ... '<actionX>')
+    
+The `instrument name` can be any string eith or without spaces, but it must be unique realtive to the other instruments. Similarly, actions can be anything and _can_ be placed in any order. Note, that the order of actions does matter as it sets both the order of actions within the GUI, but also interacts with the `final.action` setting from above. For am example of how the `final.action` setting works, consider the following instrument entry:
+
+    instruments[['CTD']] = c('Deploy', "Recover", 'Abort', 'At Depth')
+    
+With `final.action = 'Recover'`, when a users logs a deployment, the form will keep the metadata as entered (inc. station, cast, author) and the action will be incremented by one to __Recover__. When a recovery action is logged, the form will be completely reset since that action is the `final.action'. Alternatively, if the entry was:
+
+    instruments[['CTD']] = c('Deploy', 'At Depth', "Recover", 'Abort')
+
+Then the form would allow Deploy, At Depth, and Recover to be performed in order without any significant user input. Therefore, we recommend in general that the action list be ordered as `Deploy` and `Recover` in that order with any required actions in their respective order between those two and any supplemental actions after the `final.action` (as `Abort` is here). Here are some additonal example configures:
+
+    instruments[['CTD']] = c('Deploy', 'Soaking', 'At Depth', "Recover", 'Abort')
+    instruments[['Bongo']] = c('Deploy', 'At Depth', "Recover", 'Abort')
+    instruments[['Mooring Recovery']] = c('Pinged', 'Released', 'Tagged', 'On Deck', 'Abort')
+    
 
 #### Setting a computer name
 

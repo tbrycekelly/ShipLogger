@@ -1,10 +1,4 @@
 server = function(input, output, session) {
-  library(shiny)
-  library(shinyWidgets)
-  library(jsonlite)
-  library(data.table)
-  library(DT)
-  library(serial)
 
   source('config.R')
   source('functions.R')
@@ -14,6 +8,7 @@ server = function(input, output, session) {
   ## Initialize log if does not exist.
   if (!file.exists('log/log.json')) {
     tmp = blank.entry(1)
+    tmp$Cruise = settings$cruise
     tmp$Instrument = 'System'
     tmp$Action = 'Start'
     tmp$Notes = 'Initialized ShipLogger.'
