@@ -1,5 +1,10 @@
 server = function(input, output, session) {
-
+  library(shiny)
+  library(shinyWidgets)
+  library(jsonlite)
+  library(data.table)
+  library(DT)
+  library(serial)
 
   source('config.R')
   source('functions.R')
@@ -114,24 +119,19 @@ server = function(input, output, session) {
   position = reactive({
     invalidateLater(settings$nmea.update*1000)
 
-    tmp = c()
-    tryCatch({
-      gps = socketConnection(host = settings$nmea.host, port = settings$nmea.port)
-      Sys.sleep(2)
-      tmp = readLines(gps, n = 30)
-      close(gps)
-
-      tmp = tmp[grepl('GPGGA', tmp)]
-    }, error = function(e) {
-      add.log('Unable to parse GPS feed. Check NMEA settings if problem persists.')
-    }, warning = function(w) {
-      # Do nothing.
+    ## Retreive NMEA feed:
+    if (settings$nmea.type == 'serial') {
+      tmp = getSerialMessage(settings = settings)
+    } else if (settings$nmea.type == 'tcp') {
+      tmp = getTCPMessage(settings = settings)
+    } else {
+      add.log('Incorrect NMEA type specified, no data returned.')
+      tmp = c()
     }
-    )
 
     # Catch no message condition:
     if (length(tmp) < 1) {
-      return(list(lon = NA, lat = NA))
+      return(list(lon = 0, lat = 0))
     }
 
     add.log(paste('Received', length(tmp), ' NMEA sentances from GPS feed.'))
@@ -140,9 +140,18 @@ server = function(input, output, session) {
     time.raw = tmp[[1]][2]
     lat.raw = tmp[[1]][3]
     lon.raw = tmp[[1]][5]
+    north = toupper(tmp[[1]][4]) == 'N'
+    east = toupper(temp[[1]][6]) == 'E'
 
     lat = as.numeric(substr(lat.raw, 1, nchar(lat.raw) - 7)) + as.numeric(substr(lat.raw, nchar(lat.raw)-6, nchar(lat.raw)))/60
     lon = as.numeric(substr(lon.raw, 1, nchar(lon.raw) - 7)) + as.numeric(substr(lon.raw, nchar(lon.raw)-6, nchar(lon.raw)))/60
+
+    if (!north) {
+      lat = -lat
+    }
+    if (!east) {
+      lon = -lon
+    }
 
     write.csv(data.frame(time = Sys.time(), gps.time = time.raw, lon = lon, lat = lat), file = 'log/position.csv', append = T)
 
@@ -166,14 +175,20 @@ server = function(input, output, session) {
     })
 
 
-  output$lon = renderText(
-    paste0('Lon: ', round(position()$lon, digits = 4), ' W')
-  )
+  output$lon = renderText({
+    pos = position()
+    s = 'E'
+    if (pos$lon < 0) { s = 'W'; pos$lon = -pos$lon}
+    paste('Lon:', round(pos$lon, digits = 4), s)
+  })
 
 
-  output$lat = renderText(
-    paste0('Lat: ', round(position()$lat, digits = 4), ' N')
-  )
+  output$lat = renderText({
+    pos = position()
+    s = 'N'
+    if (pos$lat < 0) { s = 'S'; pos$lat = -pos$lat}
+    paste('Lat:', round(pos$lat, digits = 4), s)
+  })
 
   output$events = renderDT(
     {

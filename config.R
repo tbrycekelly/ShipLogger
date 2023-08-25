@@ -4,11 +4,12 @@
 
 
 settings = list(
-  update.frequency = 5, #sec
-  #nmea.host = "0.0.0.0", # Not setup yet
-  #nmea.port = 1000, # Not setup yet
-  nmea.port = "com5",
-  nmea.baud = "9600",
+  cruise = 'cruise name',
+  nmea.type = 'serial', # Options: 'serial' or 'tcp'
+  nmea.tcp.host = "0.0.0.0",
+  nmea.tcp.port = 1000,
+  nmea.serial.port = "com5",
+  nmea.serial.mode = "9600,n,8,1",
   nmea.update = 10, #sec
   final.action = 'Recover',
   local.timezone = -8
