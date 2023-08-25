@@ -4,32 +4,32 @@
 
 ShipLogger requires the following R packages to be installed:
 
-  library(shiny)
-  library(shinyWidgets)
-  library(jsonlite)
-  library(data.table)
-  library(DT)
-  library(serial)
+    library(shiny)
+    library(shinyWidgets)
+    library(jsonlite)
+    library(data.table)
+    library(DT)
+    library(serial)
   
 Once these dependancies are met, then starting the log is as easy as running the app. I recommend openning the project in RStudio and then running `app.R`.
 
-  source('config.R')
-  source('functions.R')
-  shiny::runApp(host = '0.0.0.0', port = 80)
+    source('config.R')
+    source('functions.R')
+    shiny::runApp(host = '0.0.0.0', port = 80)
 
 But before you do that, you should take a look at the `config.R` file where all the preferences and cruise details are located. The `config.R` file is broadly organized into three parts: (1) settings, (2) instruments and actions, and (3) cruise participants. Starting with the _settings_ list, here is an example:
 
-  settings = list(
-    cruise = 'SKQ202307S',
-    nmea.type = 'serial', # Options: 'serial' or 'tcp'
-    nmea.tcp.host = "0.0.0.0",
-    nmea.tcp.port = 1000,
-    nmea.serial.port = "com5",
-    nmea.serial.mode = "9600,n,8,1",
-    nmea.update = 10, #sec
-    final.action = 'Recover',
-    local.timezone = -8
-  )
+    settings = list(
+      cruise = 'SKQ202307S',
+      nmea.type = 'serial', # Options: 'serial' or 'tcp'
+      nmea.tcp.host = "0.0.0.0",
+      nmea.tcp.port = 1000,
+      nmea.serial.port = "com5",
+      nmea.serial.mode = "9600,n,8,1",
+      nmea.update = 10, #sec
+      final.action = 'Recover',
+      local.timezone = -8
+    )
 
 For initial setup, the appropriate cruise name should be provided. For position information, specify if you are using a _serial_ or _tcp_ connection with your GPS repreater. Next provide the respective configuration information for either the serial or tcp connection. The default `nmea.update` interval of 10 seconds is likely appropriate. The `final.action` name specified at which point the log should reset rather than increment actions. For example, recovery of the CTD usually (and hopefully) follows the deployment of the CTD, so after a CTD deployment event, the appropriate metadata in the form is preserved for the recovery event. Finally, the system time (hopefully UTC!) to local time offset can be given (-8 is UTC-8). 
 
@@ -41,16 +41,16 @@ It is recommended to set the computer name of the computer running ShipLogger is
 
 This logger is set up to use standard NMEA sentances from a GPS repeater to access real-time ship location information. In particular, the script will parse available GPGGA sentances from either a serial interface (e.g. COM port) or from a networked TCP socket connection. Virtually all science vessels have one or both options available. For TCP connections, `nmea.type` should be set to __'tcp'__ and the specific values for `nmea.tcp.host` and `nmea.tcp.port` should be provided. For serial interfaces, `nmea.type` should be set to __'serial'__ and a com port specified in `nmea.serial.port`. In general, `nmea.serial.mode` wont need to be adjusted except for ships using a baud rate different than 9600. The `nmea.update` variable sets the number of seconds to wait between attempting to update the position data. In general 10 seconds is an appropriate interval. For reference, an appropriate NMEA GPGGA sentence[[ref]](https://docs.novatel.com/OEM7/Content/Logs/GPGGA.htm) is given below:
 
-  $GPGGA,202530.00,5109.0262,N,11401.8407,W,5,40,0.5,1097.36,M,-17.00,M,18,TSTR*61
+    $GPGGA,202530.00,5109.0262,N,11401.8407,W,5,40,0.5,1097.36,M,-17.00,M,18,TSTR*61
 
 Data from the NMEA position feed is internally logged to a dedicated file including system time (used throughout ShipLogger), GPS timestamp, longitude, and latitude. This enables retreival of position data for events that were not logged on time or otherwise edited later on. This position file can be retrieved at any time from the dashboard.
 
 To facilitate testing/diagnostics for the NMEA feed, the `testNMEA` function is provided to validate the settings list provided. A working combination of settings should return:
 
-  Testing NMEA settings:
-  Retreived 2 NMEA sentences:
-  	 $GPGGA,202530.00,5109.0262,N,11401.8407,W,5,40,0.5,1097.36,M,-17.00,M,18,TSTR*61
-  	 $GPGGA,202531.00,5109.0562,N,11401.8537,W,5,40,0.5,1097.36,M,-17.00,M,18,TSTF*62
+    Testing NMEA settings:
+    Retreived 2 NMEA sentences:
+    	 $GPGGA,202530.00,5109.0262,N,11401.8407,W,5,40,0.5,1097.36,M,-17.00,M,18,TSTR*61
+    	 $GPGGA,202531.00,5109.0562,N,11401.8537,W,5,40,0.5,1097.36,M,-17.00,M,18,TSTF*62
 
 
 #### Data Integrety
