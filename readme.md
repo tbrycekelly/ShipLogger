@@ -35,6 +35,16 @@ For initial setup, the appropriate cruise name should be provided. For position 
 
 The next section of the configuration is for setting up the instruments and the actions associated with them. To edit or add an instrument or action, simply add a new list entry or modify the list of actions associated with it. See the __Actions__ section below.
 
+The final configuration task is setting up the author list. This can be easily pulled from a cruise roster or email chain. This format has worked well and provides some valuable information for future log viewers, but set of entries will work.
+
+    authors = c(
+      '',
+      'Jane Doe <jdoe@email.com>',
+      'Peter Jacks <pete@org.edu>',
+      'Bosun <bosunbrews@dogs.com>'
+    )
+
+By default the list of automatically sorted by alphabetical order, but this can be turned off.
 
 #### Actions
 

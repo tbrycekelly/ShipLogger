@@ -77,7 +77,11 @@ server = function(input, output, session) {
       } else {
         add.log('Incremeting action item selection.')
         i = which(input$action == instruments[[input$instrument]])
-        updateRadioGroupButtons(inputId = 'action', selected = instruments[[input$instrument]][i+1])
+        if (i == length(instruments[[input$instrument]])) {
+          clear()
+        } else {
+          updateRadioGroupButtons(inputId = 'action', selected = instruments[[input$instrument]][i+1])
+        }
       }
     })
 
