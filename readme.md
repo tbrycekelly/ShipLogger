@@ -21,11 +21,14 @@ But before you do that, you should take a look at the `config.R` file where all 
 
     settings = list(
       cruise = 'SKQ202307S',
-      nmea.type = 'serial', # Options: 'serial' or 'tcp'
+      nmea.type = 'serial', # Options: 'serial' or 'tcp' or 'file'
       nmea.tcp.host = "0.0.0.0",
       nmea.tcp.port = 1000,
       nmea.serial.port = "com5",
       nmea.serial.mode = "9600,n,8,1",
+      nmea.file = '',
+      nmea.file.order = 'asc', # asc = newest entry at end of file; dec = newest entry at start of file.
+      nmea.file.pattern = '*',
       nmea.update = 10, #sec
       final.action = 'Recover',
       local.timezone = -8

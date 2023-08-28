@@ -1,4 +1,5 @@
 ui = fluidPage(
+  #useShinyalert(),
   titlePanel(""),
 
   ## Start Layout
@@ -24,7 +25,8 @@ ui = fluidPage(
       ),
       fluidRow(
         br(),
-        downloadButton('download.pos', label = 'Positions')
+        downloadButton('download.pos', label = 'Positions'),
+        actionButton('about', 'About')
       )
     ),
 

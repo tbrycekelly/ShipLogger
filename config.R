@@ -5,13 +5,16 @@
 
 settings = list(
   cruise = 'cruise name',
-  nmea.type = 'tcp', # Options: 'serial' or 'tcp'
-  nmea.tcp.host = "0.0.0.0",
+  nmea.type = 'tcp', # Options: 'serial' or 'tcp' or 'file'
+  nmea.tcp.host = "1.2.3.4",
   nmea.tcp.port = 1000,
   nmea.serial.port = "com5",
   nmea.serial.mode = "9600,n,8,1",
+  nmea.file = '',
+  nmea.file.order = 'asc', # asc = newest entry at end of file; dec = newest entry at start of file.
+  nmea.file.pattern = '*',
   nmea.update = 10, #sec
-  final.action = 'Recover',
+  final.action = c('Recover', 'End'),
   local.timezone = -8
 )
 
@@ -29,11 +32,12 @@ instruments[['CTD']] =          c('Deploy', "Recover", 'Abort', 'At Depth')
 instruments[['DPI']] =          c('Deploy', "Recover", 'Abort')
 instruments[['Iron Fish']] =    c('Deploy', "Recover", 'Abort')
 instruments[['Methot']] =       c('Deploy', 'At Depth', "Recover", 'Abort')
-instruments[['Mooring']] =      c('Deploy', "Recover", 'Abort')
+instruments[['Mooring Deployment']] = c('Start', "End", 'Abort')
+instruments[['Mooring Recovery']] = c('Start', "End", 'Abort')
 instruments[['MultiNet']] =     c('Deploy', 'At Depth', "Recover", 'Abort')
 instruments[['Sediment Trap']] = c('Deploy', "Recover", 'Abort')
 instruments[['TM CTD']] =       c('Deploy', "Recover", 'Abort', 'At Depth')
-instruments[['VertMultiNet']] = c('Deploy', "Recover", 'Abort')
+instruments[['Vertical MultiNet']] = c('Deploy', "Recover", 'Abort')
 
 
 authors = c(

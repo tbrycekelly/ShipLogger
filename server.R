@@ -1,5 +1,7 @@
 server = function(input, output, session) {
 
+  message(str(session))
+
   source('config.R')
   source('functions.R')
   add.log('New session created. Loaded source files.')
@@ -72,7 +74,7 @@ server = function(input, output, session) {
 
       write.json(filename = 'log/log.json', entry = entry)
 
-      if (input$action == settings$final.action) {
+      if (input$action %in% settings$final.action) {
         clear()
       } else {
         add.log('Incremeting action item selection.')
@@ -92,9 +94,10 @@ server = function(input, output, session) {
     {
       row  <- input$events_cell_edit$row
       col <- input$events_cell_edit$col
-      add.log(paste('Entry modified at', row, col,'.'))
+      add.log(paste('Entry modified at', row, col,'. New content: ', input$events_cell_edit$value, '.'))
       tmp = log()
       tab = parse.log(tmp)
+
       for (i in length(tmp):1) {
         if (tab$ID[row] == tmp[[i]]$ID) {
           entry = tmp[[i]]
@@ -113,6 +116,10 @@ server = function(input, output, session) {
       updateRadioGroupButtons(inputId = 'action', choices = instruments[[input$instrument]])
     }
   )
+
+  #observeEvent(input$about, {
+  #  shinyalert::shinyalert(title = 'About this app', text = shiny::markdown('about.md'))
+  #})
 
 
   position = reactive({
@@ -140,10 +147,14 @@ server = function(input, output, session) {
     lat.raw = tmp[[1]][3]
     lon.raw = tmp[[1]][5]
     north = toupper(tmp[[1]][4]) == 'N'
-    east = toupper(temp[[1]][6]) == 'E'
+    east = toupper(tmp[[1]][6]) == 'E'
 
-    lat = as.numeric(substr(lat.raw, 1, nchar(lat.raw) - 7)) + as.numeric(substr(lat.raw, nchar(lat.raw)-6, nchar(lat.raw)))/60
-    lon = as.numeric(substr(lon.raw, 1, nchar(lon.raw) - 7)) + as.numeric(substr(lon.raw, nchar(lon.raw)-6, nchar(lon.raw)))/60
+    lat = strsplit(lat.raw, '\\.')[[1]] ## e.g. 5057.4567
+    lon = strsplit(lon.raw, '\\.')[[1]] # e.g. 13745.5678
+
+    ##TODO
+    lat = as.numeric(substr(lat[1], 1, nchar(lat[1]) - 2)) + as.numeric(substr(lat[1], nchar(lat[1])-1, nchar(lat[1])))/60 + as.numeric(paste0('0.', lat[2]))/60
+    lon = as.numeric(substr(lon[1], 1, nchar(lon[1]) - 2)) + as.numeric(substr(lon[1], nchar(lon[1])-1, nchar(lon[1])))/60 + as.numeric(paste0('0.', lon[2]))/60
 
     if (!north) {
       lat = -lat
@@ -152,7 +163,7 @@ server = function(input, output, session) {
       lon = -lon
     }
 
-    write.csv(data.frame(time = Sys.time(), gps.time = time.raw, lon = lon, lat = lat), file = 'log/position.csv', append = T)
+    write.table(x = data.frame(time = Sys.time(), gps.time = time.raw, lon = lon, lat = lat), sep = ',', file = 'log/position.csv', append = T, col.names = F, row.names = F)
 
     list(lon = lon, lat = lat)
   })
@@ -192,7 +203,7 @@ server = function(input, output, session) {
   output$events = renderDT(
     {
       tmp = parse.log(log())
-      DT::datatable(tmp[order(tmp$Time),], editable = T, filter = 'top', rownames = F)
+      DT::datatable(tmp[order(tmp$Time, decreasing = T),], editable = T, filter = 'top', rownames = F)
     })
 
 
