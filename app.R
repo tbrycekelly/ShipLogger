@@ -5,7 +5,7 @@ library(data.table)
 library(DT)
 library(serial)
 library(openxlsx)
-#library(shinyalert)
+library(shinyalert)
 
 source('config.R')
 source('functions.R')

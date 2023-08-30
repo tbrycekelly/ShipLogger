@@ -5,8 +5,8 @@
 
 settings = list(
   cruise = 'cruise name',
-  nmea.type = 'tcp', # Options: 'serial' or 'tcp' or 'file'
-  nmea.tcp.host = "1.2.3.4",
+  nmea.type = 'serial', # Options: 'serial' or 'tcp' or 'file'
+  nmea.tcp.host = "127.0.0.1",
   nmea.tcp.port = 1000,
   nmea.serial.port = "com5",
   nmea.serial.mode = "9600,n,8,1",

@@ -1,7 +1,5 @@
 server = function(input, output, session) {
-
-  message(str(session))
-
+  shinyalert::useShinyalert()
   source('config.R')
   source('functions.R')
   add.log('New session created. Loaded source files.')
@@ -117,9 +115,11 @@ server = function(input, output, session) {
     }
   )
 
-  #observeEvent(input$about, {
-  #  shinyalert::shinyalert(title = 'About this app', text = shiny::markdown('about.md'))
-  #})
+  observeEvent(input$about, {
+    shinyalert::shinyalert(title = 'About this app',
+                           text = 'This app was created by Tom Kelly (<a target = "_new_" href = "https://github.com/tbrycekelly">Github Link</a>).<br /> To learn more about this app and how to set it up please visit the <a target = "_new_" href = "http://github.com/tbrycekelly/ShipLogger">project page</a>.',
+                           html = T)
+  })
 
 
   position = reactive({
