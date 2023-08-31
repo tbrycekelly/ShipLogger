@@ -10,7 +10,6 @@ library(openxlsx)
 blank.entry = function(n) {
   data.frame(
     ID  = rep(digest::digest(Sys.time(), algo = 'crc32'), n),
-    Cruise = 'current cruise',
     Time = NA,
     Lon = NA,
     Lat = NA,
@@ -53,9 +52,10 @@ parse.log = function(json) {
     }
   }
 
-  ## Remove edits
-  log = log[nrow(log):1,]
+  ## Remove edits and deletions. Then order
   log = log[!duplicated(log$ID),]
+  log = log[log$Action != 'Delete',]
+  log = log[order(log$Time, decreasing = T),]
 
   log
 }
@@ -63,6 +63,7 @@ parse.log = function(json) {
 
 load.log = function(file = 'log/log.json') {
   tmp = readLines(file)
+  tmp = tmp[length(tmp):1] # rev chronology
   lapply(tmp, function(x) {jsonlite::fromJSON(x, simplifyDataFrame = F)})
 }
 
@@ -104,7 +105,7 @@ getTCPMessage = function(settings) {
 
     tmp = tmp[grepl('GGA', toupper(tmp))]
   }, error = function(e) {
-    add.log(paste('Unable to parse GPS feed from TCP connection. Check NMEA settings if problem persists. Error information:', e))
+    add.log(paste('Unable to parse GPS feed from TCP connection. Check NMEA settings if problem persists.'))
   }, warning = function(w) {
     # Do nothing.
   }

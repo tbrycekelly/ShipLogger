@@ -82,6 +82,10 @@ ui = fluidPage(
             column(
               width = 12,
               hr(),
+              fluidRow(
+                actionButton("edit_button", "Details", icon("edit")),
+                actionButton("delete_button", "Delete", icon("trash-alt"))
+              ),
               br(),
               dataTableOutput("events")
             )

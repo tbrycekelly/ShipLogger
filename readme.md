@@ -10,12 +10,18 @@ ShipLogger requires the following R packages to be installed:
     library(data.table)
     library(DT)
     library(serial)
+    library(openxlsx)
+    library(shinyalert)
   
-Once these dependancies are met, then starting the log is as easy as running the app. I recommend openning the project in RStudio and then running `app.R`.
+Once these dependancies are met, then starting the log is as easy as running the app. I recommend opening the project in RStudio and then running `app.R`.
 
     source('config.R')
     source('functions.R')
     shiny::runApp(host = '0.0.0.0', port = 80)
+    
+The app should look something like this:
+
+![alt text]("figures/Screenshot Init.png" "Blank ShipLogger")
 
 But before you do that, you should take a look at the `config.R` file where all the preferences and cruise details are located. The `config.R` file is broadly organized into three parts: (1) settings, (2) instruments and actions, and (3) cruise participants. Starting with the _settings_ list, here is an example:
 

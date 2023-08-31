@@ -1,5 +1,5 @@
 server = function(input, output, session) {
-  shinyalert::useShinyalert()
+
   source('config.R')
   source('functions.R')
   add.log('New session created. Loaded source files.')
@@ -21,12 +21,15 @@ server = function(input, output, session) {
     writeLines("time,gps.time,lon,lat", 'log/position.csv')
   }
 
+
   log = reactive({
     input$enter
     input$clear.enter
     input$refresh
+    input$delete_button
     load.log('log/log.json')
   })
+
 
   add.log('Initialization finished.')
 
@@ -71,16 +74,17 @@ server = function(input, output, session) {
                   )
 
       write.json(filename = 'log/log.json', entry = entry)
-
-      if (input$action %in% settings$final.action) {
-        clear()
-      } else {
-        add.log('Incremeting action item selection.')
-        i = which(input$action == instruments[[input$instrument]])
-        if (i == length(instruments[[input$instrument]])) {
+      if (!is.null(input$action)) {
+        if (input$action %in% settings$final.action) {
           clear()
         } else {
-          updateRadioGroupButtons(inputId = 'action', selected = instruments[[input$instrument]][i+1])
+          add.log(paste0('Incremeting action item selection for ', input$instrument, '.'))
+          i = which(input$action == instruments[[input$instrument]])
+          if (i == length(instruments[[input$instrument]])) {
+            clear()
+          } else {
+            updateRadioGroupButtons(inputId = 'action', selected = instruments[[input$instrument]][i+1])
+          }
         }
       }
     })
@@ -90,20 +94,70 @@ server = function(input, output, session) {
   observeEvent(
     input$events_cell_edit,
     {
-      row  <- input$events_cell_edit$row
-      col <- input$events_cell_edit$col
-      add.log(paste('Entry modified at', row, col,'. New content: ', input$events_cell_edit$value, '.'))
+      row  = input$events_cell_edit$row
+      col = input$events_cell_edit$col + 1
       tmp = log()
       tab = parse.log(tmp)
 
-      for (i in length(tmp):1) {
+      add.log(paste('Entry modified at (row, col)', row, col,'. Keys are:', names(tab)[col], 'and', tab$ID[row],'. New content: ', input$events_cell_edit$value, '.'))
+
+      for (i in 1:length(tmp)) {
         if (tab$ID[row] == tmp[[i]]$ID) {
           entry = tmp[[i]]
           n = names(tab)[col]
           entry[[n]] = input$events_cell_edit$value
           write.json('log/log.json', entry)
-          add.log(paste('Original entry found. Appending updates for parameter', n, 'with value', input$events_cell_edit$value))
+          add.log(paste('Original entry found for ', tab$ID[row], '. Appending updates for parameter', n, 'with value', input$events_cell_edit$value))
           return()
+        }
+      }
+    })
+
+  observeEvent(
+    input$edit_button,
+    {
+      row  = input$events_rows_selected
+      add.log(paste('Entry selected for review is ', row, '.'))
+      if (length(row) > 0) {
+        showModal(
+
+          modalDialog(
+            div(
+              id = ("entry_form"),
+              tags$head(tags$style(".modal-dialog{ width:760px}")),
+              tags$head(tags$style(HTML(".shiny-split-layout > div {overflow: visible}"))),
+              fluidPage(
+                fluidRow(
+                  p('Revision history:'),
+                  htmlOutput('history')
+                ),
+                easyClose = TRUE
+              )
+            )
+          )
+        )
+      }
+    }
+  )
+
+  observeEvent(
+    input$delete_button,
+    {
+      row  = input$events_rows_selected
+
+      if (length(row) == 1) {
+        tmp = log()
+        tab = parse.log(tmp)
+
+        add.log(paste0('Entry selected for deletion is ', row, ' (', tab$ID[row],').'))
+        for (i in 1:length(tmp)) {
+          if (tab$ID[row] == tmp[[i]]$ID) {
+            entry = tmp[[i]]
+            entry[['Action']] = 'Delete'
+            write.json('log/log.json', entry)
+            clear()
+            return()
+          }
         }
       }
     })
@@ -203,7 +257,7 @@ server = function(input, output, session) {
   output$events = renderDT(
     {
       tmp = parse.log(log())
-      DT::datatable(tmp[order(tmp$Time, decreasing = T),], editable = T, filter = 'top', rownames = F)
+      DT::datatable(tmp, editable = T, filter = 'top', rownames = F, selection = 'single')
     })
 
 
@@ -216,6 +270,21 @@ server = function(input, output, session) {
       head(tmp, 8)
     })
 
+  output$history = renderUI({
+
+    message(Sys.time(), ': Rendering history.')
+    if (!is.null(input$events_rows_selected)) {
+      tmp = log()
+      tab = parse.log(tmp)
+      record = readLines('log/diagnostics.log')
+
+      add.log(paste('Searching for the history of event', tab$ID[input$events_rows_selected], '.'))
+
+      record = record[grepl(tab$ID[input$events_rows_selected], record)]
+
+      return(HTML(paste0(record, collapse = '<br />')))
+    }
+  })
 
 
   #### Download options:
