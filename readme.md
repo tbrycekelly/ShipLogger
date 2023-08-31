@@ -99,3 +99,10 @@ To facilitate testing/diagnostics for the NMEA feed, the `testNMEA` function is 
 #### Data Integrety
 
 Information in the log is stored as a text file with each entry saved as a JSON sentence for interoperability. Upon each change to the event log, the current version is copied (renamed with the current timestamp) prior to modification. When an entry is modified in post, the original entry is preserved and an appropriately modified entry is appended. The display and export options only provide the last version of each unique ID, and so modification history can be tracked. Additionally, a diagnostic log is kept to facilitate the finding of problems. At any time, the entire ShipLogger folder can be copied and saved. This provides an easy means of backup.
+
+
+## Supported by
+This project was supported by the National Science Foundation (Awards 1736906 and 2205954) and by the University of Alaska Fairbanks. ShipLogger has been used on several oceanographic voyages and remains under active development. 
+
+We make no guarentees and promises about the function of this software. All liability for the use and misuse of this product remains with the end user.
+
