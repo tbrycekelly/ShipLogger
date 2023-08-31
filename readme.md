@@ -21,7 +21,7 @@ Once these dependancies are met, then starting the log is as easy as running the
     
 The app should look something like this:
 
-![Blank ShipLogger session.](https://github.com/tbrycekelly/ShipLogger/tree/master/figures/Screenshot%20Init.png)
+![Blank ShipLogger session.](figures/Screenshot%20Init.png)
 
 But before you do that, you should take a look at the `config.R` file where all the preferences and cruise details are located. The `config.R` file is broadly organized into three parts: (1) settings, (2) instruments and actions, and (3) cruise participants. Starting with the _settings_ list, here is an example:
 
