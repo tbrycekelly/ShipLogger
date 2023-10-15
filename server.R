@@ -184,6 +184,8 @@ server = function(input, output, session) {
       tmp = getSerialMessage(settings = settings)
     } else if (settings$nmea.type == 'tcp') {
       tmp = getTCPMessage(settings = settings)
+    } else if (settings$nmea.type == 'demo') {
+      tmp = getDemoMessage(settings = settings)
     } else {
       add.log('Incorrect NMEA type specified, no data returned.')
       tmp = c()

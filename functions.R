@@ -79,15 +79,13 @@ add.log = function(message, file = 'log/diagnostics.log') {
 getSerialMessage = function(settings) {
   tmp = c()
   tryCatch({
-    con = serial::serialConnection(port = settings$nmea.serial.port, mode = settings$nmea.serial.mode)
-    Sys.sleep(2)
     tmp = serial::read.serialConnection(con = con, n = 0)
-    close(con)
 
     tmp = tmp[grepl('GGA', toupper(tmp))]
   }, error = function(e) {
     add.log(paste('Unable to retreive GPS feed from serial connection. Check NMEA settings if problem persists. Error information:', e))
   }, warning = function(w) {
+    add.log(paste('Unable to retreive GPS feed from serial connection. Check NMEA settings if problem persists. Error information:', w))
 
   })
 
@@ -95,11 +93,11 @@ getSerialMessage = function(settings) {
 }
 
 
-getTCPMessage = function(settings) {
+getTCPMessage = function(settings, delay = 2) {
   tmp = c()
   tryCatch({
     gps = socketConnection(host = settings$nmea.tcp.host, port = settings$nmea.tcp.port)
-    Sys.sleep(2)
+    Sys.sleep(delay)
     tmp = readLines(gps, n = 100)
     close(gps)
 
@@ -112,6 +110,11 @@ getTCPMessage = function(settings) {
   )
 
   tmp
+}
+
+
+getDemoMessage = function(settings, delay = 2) {
+  paste0('$GPGGA,123519,', 4807.038 + round(runif(1), 3), ',N,', round(01131.000 + runif(1), 3), ',E,1,08,,545.440,M,,,,*47')
 }
 
 
@@ -135,7 +138,7 @@ getNMEAFile = function(settings) {
     }
 
     tmp = readLines(path[l])
-    tmp = tmp[grepl('GGA', toupper(tmp))] # INGGA and GPGGA sentances. TODO: toupper()?
+    tmp = tmp[grepl('GGA', toupper(tmp))] # INGGA and GPGGA sentences. TODO: toupper()?
     if (settings$nmea.file.order == 'asc') {
       tmp = rev(tmp)
     }
@@ -151,16 +154,16 @@ getNMEAFile = function(settings) {
 }
 
 
-testNMEA = function(settings) {
+testNMEA = function(settings, delay = 2) {
   message('Testing NMEA settings:')
 
   if (settings$nmea.type == 'serial') {
     if (!toupper(settings$nmea.serial.port) %in% toupper(serial::listPorts())) {
       message('N.B. Specified serial port does not appear to exist. Attempting anyway.')
     }
-    tmp = getSerialMessage(settings = settings)
+    tmp = getSerialMessage(settings = settings, delay = delay)
   } else if (settings$nmea.type == 'tcp') {
-    tmp = getTCPMessage(settings = settings)
+    tmp = getTCPMessage(settings = settings, delay = delay)
   } else {
     add.log('Incorrect NMEA type specified, no data returned.')
     tmp = c()

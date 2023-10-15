@@ -10,7 +10,6 @@ library(shinyalert)
 source('config.R')
 source('functions.R')
 
-
 ## Test NMEA (if applicable)
 #testNMEA(settings = settings)
 

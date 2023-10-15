@@ -82,7 +82,7 @@ It is recommended to set the computer name of the computer running ShipLogger is
 
 #### NMEA Setup and Information
 
-This logger is set up to use standard NMEA sentances from a GPS repeater to access real-time ship location information. In particular, the script will parse available GPGGA sentances from either a serial interface (e.g. COM port) or from a networked TCP socket connection. Virtually all science vessels have one or both options available. For TCP connections, `nmea.type` should be set to __'tcp'__ and the specific values for `nmea.tcp.host` and `nmea.tcp.port` should be provided. For serial interfaces, `nmea.type` should be set to __'serial'__ and a com port specified in `nmea.serial.port`. In general, `nmea.serial.mode` wont need to be adjusted except for ships using a baud rate different than 9600. The `nmea.update` variable sets the number of seconds to wait between attempting to update the position data. In general 10 seconds is an appropriate interval. For reference, an appropriate NMEA GPGGA sentence[[ref]](https://docs.novatel.com/OEM7/Content/Logs/GPGGA.htm) is given below:
+This logger is set up to use standard NMEA sentences from a GPS repeater to access real-time ship location information. In particular, the script will parse available GPGGA and INGGA sentances (really all \*GGA\* sentences) from either a serial interface (e.g. COM port) or from a networked TCP socket connection. Virtually all science vessels have one or both options available. For TCP connections, `nmea.type` should be set to __'tcp'__ and the specific values for `nmea.tcp.host` and `nmea.tcp.port` should be provided. For serial interfaces, `nmea.type` should be set to __'serial'__ and a com port specified in `nmea.serial.port`. In general, `nmea.serial.mode` wont need to be adjusted except for ships using a baud rate different than 9600. The `nmea.update` variable sets the number of seconds to wait between attempting to update the position data. In general 10 seconds is an appropriate interval. For reference, an appropriate NMEA GPGGA sentence[[ref]](https://docs.novatel.com/OEM7/Content/Logs/GPGGA.htm) is given below:
 
     $GPGGA,202530.00,5109.0262,N,11401.8407,W,5,40,0.5,1097.36,M,-17.00,M,18,TSTR*61
 
@@ -104,5 +104,5 @@ Information in the log is stored as a text file with each entry saved as a JSON 
 ## Supported by
 This project was supported by the National Science Foundation (Awards 1736906 and 2205954) and by the University of Alaska Fairbanks. ShipLogger has been used on several oceanographic voyages and remains under active development. 
 
-We make no guarentees and promises about the function of this software. All liability for the use and misuse of this product remains with the end user.
+We make no guarantees and promises about the function of this software. All liability for the use and misuse of this product remains with the end user.
 

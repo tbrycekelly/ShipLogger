@@ -5,11 +5,11 @@
 
 settings = list(
   cruise = 'cruise name',
-  nmea.type = 'serial', # Options: 'serial' or 'tcp' or 'file'
+  nmea.type = 'demo', # Options: 'serial' or 'tcp' or 'file'
   nmea.tcp.host = "127.0.0.1",
   nmea.tcp.port = 1000,
-  nmea.serial.port = "com5",
-  nmea.serial.mode = "9600,n,8,1",
+  nmea.serial.port = "com10",
+  nmea.serial.mode = "9600,n,8,1", # Set baud rate here, typically either 9600 or 4600
   nmea.file = '',
   nmea.file.order = 'asc', # asc = newest entry at end of file; dec = newest entry at start of file.
   nmea.file.pattern = '*',
@@ -28,7 +28,7 @@ instruments = list()
 
 instruments[['Bongo Net']] =    c('Deploy', 'At Depth', "Recover", 'Abort')
 instruments[["Calvet Net"]] =   c('Deploy', "Recover", 'Abort')
-instruments[['CTD']] =          c('Deploy', "Recover", 'Abort', 'At Depth')
+instruments[['CTD']] =          c('Deploy', "Recover", 'Abort', 'At Depth', 'Deploy Prod', "Recover Prod", "Abort Prod")
 instruments[['DPI']] =          c('Deploy', "Recover", 'Abort')
 instruments[['Iron Fish']] =    c('Deploy', "Recover", 'Abort')
 instruments[['Methot']] =       c('Deploy', 'At Depth', "Recover", 'Abort')
