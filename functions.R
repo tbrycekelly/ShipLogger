@@ -7,30 +7,66 @@ library(serial)
 library(openxlsx)
 
 
-blank.entry = function(n) {
+#' Programmatically create a Shiny input
+#'
+#' @param FUN function to create the input
+#' @param n number of inputs to be created
+#' @param id ID prefix for each input
+shinyInput <- function(FUN, id, ...) {
+
+  # for each of n, create a new input using the FUN function and convert
+  # to a character
+  vapply(1:length(id), function(i){
+    as.character(FUN(paste0(id[i]), ...))
+  }, character(1))
+}
+
+init.log = function(path = 'log/log.json') {
+  if (!file.exists('log/log.json')) {
+    tmp = as.list(blank.event())
+    #tmp$start.time = Sys.time()
+    #tmp$end.time = Sys.time()
+    tmp$id = 1
+    tmp$events = 0
+    tmp$instrument = 'System'
+    tmp$notes = 'Initialized ShipLogger.'
+
+    writeLines(jsonlite::toJSON(tmp), 'log/log.json')
+  }
+}
+
+blank.event = function(n = 1) {
+
   data.frame(
-    ID  = rep(digest::digest(Sys.time(), algo = 'crc32'), n),
-    Time = NA,
-    Lon = NA,
-    Lat = NA,
-    Station = NA,
-    Cast = NA,
-    Instrument = NA,
-    Action = NA,
-    Author = NA,
-    Notes = NA
+    id  = sapply(runif(n), digest::digest),
+    events = '',
+    n = 0,
+    status = 'QUEUED',
+    start.time = '',
+    start.lon = '',
+    start.lat = '',
+    end.time = '',
+    end.lon = '',
+    end.lat = '',
+    station = '',
+    cast = '',
+    instrument = '',
+    author = '',
+    notes = ''
   )
 }
 
 
+
 ## Take log entry message and write it to JSON log file.
 write.json = function(filename, entry) {
+  entry = as.list(entry)
 
   dat = jsonlite::toJSON(entry)
 
   file.copy(from = filename, to = paste0(filename, ' ', gsub(':', '', Sys.time()), '.old'))
 
-  ## Write entry.
+  # Write entry.
   f = file(description = filename, open = 'a')
   writeLines(dat, con = f)
   close(f)
@@ -40,22 +76,24 @@ write.json = function(filename, entry) {
 
 
 
+
 ## Parse json log entries into data.frame
 parse.log = function(json) {
-  log = blank.entry(length(json))
+  log = blank.event(length(json))
 
   for (i in 1:length(json)) {
     for (n in names(json[[i]])) {
-      if (n %in% names(log) & length(json[[i]][[n]]) > 0) {
+      if (n %in% names(log) & length(json[[i]][[n]]) == 1) {
         log[i,n] = json[[i]][[n]]
       }
     }
   }
 
+
   ## Remove edits and deletions. Then order
-  log = log[!duplicated(log$ID),]
-  log = log[log$Action != 'Delete',]
-  log = log[order(log$Time, decreasing = T),]
+  log$id = as.numeric(log$id)
+  log = log[!duplicated(log$id) & !is.na(log$id),]
+  log = log[order(log$id, decreasing = T),]
 
   log
 }
@@ -147,9 +185,7 @@ getNMEAFile = function(settings) {
     add.log('Unable to parse GPS feed. Check NMEA settings if problem persists.')
   }, warning = function(w) {
     # Do nothing.
-  }
-  )
-
+  })
   tmp[1]
 }
 
@@ -171,3 +207,30 @@ testNMEA = function(settings, delay = 2) {
 
   message('Retreived ', length(tmp), ' NMEA sentences:\n', paste('\t', tmp, collapse = '\n'))
 }
+
+
+
+
+shinyInput = function(FUN, id, ...) {
+
+  # for each of n, create a new input using the FUN function and convert
+  # to a character
+  vapply(id, function(i){
+    as.character(FUN(i, ...))
+  }, character(1))
+
+}
+
+
+
+#Label mandatory fields
+labelMandatory = function(label) {
+  tagList(
+    label,
+    span("*", class = "mandatory_star")
+  )
+}
+
+appCSS = ".mandatory_star { color: red; }"
+
+

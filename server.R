@@ -1,49 +1,101 @@
+library(shiny)
+library(shinyWidgets)
+library(jsonlite)
+library(data.table)
+library(DT)
+library(serial)
+library(openxlsx)
+library(shinyalert)
+library(shinydashboardPlus)
+
+source('config.R')
+source('functions.R')
+
+
 server = function(input, output, session) {
+
 
   source('config.R')
   source('functions.R')
   add.log('New session created. Loaded source files.')
+  init.log() # create log if doesn't exist
 
+  log = reactiveFileReader(
+    intervalMillis = 1e3,
+    filePath = 'log/log.json',
+    readFunc = load.log,
+    session = session
+    )
 
-  ## Initialize log if does not exist.
-  if (!file.exists('log/log.json')) {
-    tmp = blank.entry(1)
-    tmp$Cruise = settings$cruise
-    tmp$Instrument = 'System'
-    tmp$Action = 'Start'
-    tmp$Notes = 'Initialized ShipLogger.'
-    tmp = as.list(tmp)
-
-    writeLines(jsonlite::toJSON(tmp), 'log/log.json')
-  }
-
-  if (!file.exists('log/position.csv')) {
-    writeLines("time,gps.time,lon,lat", 'log/position.csv')
-  }
-
-
-  log = reactive({
-    input$enter
-    input$clear.enter
-    input$refresh
-    input$delete_button
-    load.log('log/log.json')
-  })
-
+  parseLog = reactive(
+    {
+      tmp = parse.log(log())
+      tmp[tmp$status != 'DELETED',]
+    }
+  )
 
   add.log('Initialization finished.')
 
   clear = function() {
+    tmp = parseLog()
+    id = idList()
     add.log('Clearing user input fields.')
-    updateTextInput(inputId = "entry", value = "")
+    updateTextInput(inputId = "start.event", value = max(as.numeric(tmp$event)) + 1)
+    updateTextInput(inputId = "start.sample", value = max(id$used) + 1)
     updateSelectInput(inputId = 'author', selected = F)
     updateSelectInput(inputId = 'instrument', selected = F)
     updateTextInput(inputId = "stn", value = "")
     updateTextInput(inputId = "cast", value = "")
-    updateTextInput(inputId = "bottom", value = "")
-    updateRadioGroupButtons(inputId = 'action', selected = F)
+    updateTextInput(inputId = "n", value = "1")
   }
 
+
+  #Form for data entry
+  entry_form <- function(button_id){
+    Sys.sleep(0.2)
+    showModal(
+      modalDialog(
+        div(id=("entry_form"),
+            tags$head(tags$style(".modal-dialog{ width:860px}")),
+            tags$head(tags$style(HTML(".shiny-split-layout > div {overflow: visible}"))),
+            fluidPage(
+              fluidRow(
+                splitLayout(
+                  cellWidths = c("200px", "100px", "100px"),
+                  cellArgs = list(style = "vertical-align: top"),
+                  textInput("event.time.start", "Start Time", value = ''),
+                  textInput("event.lon.start", "Lon", placeholder = ""),
+                  textInput("event.lat.start", "Lat", placeholder = "")
+                ),
+                splitLayout(
+                  cellWidths = c("200px", "100px", "100px"),
+                  cellArgs = list(style = "vertical-align: top"),
+                  textInput("event.time.end", "End Time", value = ''),
+                  textInput("event.lon.end", "Lon", placeholder = ""),
+                  textInput("event.lat.end", "Lat", placeholder = "")
+                ),
+                splitLayout(
+                  cellWidths = c("175px", "112px", "112px"),
+                  cellArgs = list(style = "vertical-align: top"),
+                  selectInput('event.author', 'Author', authors),
+                  textInput("event.station", 'Stn', placeholder = ""),
+                  textInput("event.cast", 'Cast', placeholder = "")
+                ),
+                selectInput('event.instrument', 'Instrument', instruments),
+                textAreaInput("event.ids", "Assigned IDs", placeholder = "", height = 75, width = "354px"),
+                textAreaInput("event.note", "Note", placeholder = "", height = 100, width = "354px"),
+                actionButton(button_id, "Submit"),
+
+                shiny::hr(),
+                p('Revision history:'),
+                htmlOutput('history')
+              ),
+              easyClose = TRUE
+            )
+        )
+      )
+    )
+  }
 
   observeEvent(
     input$clear.enter,
@@ -52,90 +104,168 @@ server = function(input, output, session) {
     }
   )
 
-
   observeEvent(
-    input$enter,
+    input$start_button,
     {
-      id = digest::digest(Sys.time(), algo = 'crc32')
-      add.log(paste('Logging user event', id,'.'))
-      file = 'log/log.json'
+      id <- as.numeric(input$start_button)
+      message('Start button for ', id)
+      raw = log()
+      parse = parseLog()
 
-      entry = list(ID = id,
-                  Time = paste0(format(Sys.time())),
-                  Lon = position()$lon,
-                  Lat = position()$lat,
-                  Station = toupper(input$stn),
-                  Cast = input$cast,
-                  Depth = input$bottom,
-                  Instrument = input$instrument,
-                  Action = input$action,
-                  Author = input$author,
-                  Notes = input$entry
-                  )
-
-      write.json(filename = 'log/log.json', entry = entry)
-      if (!is.null(input$action)) {
-        if (input$action %in% settings$final.action) {
+      i = 1
+      while (i <= length(raw)) {
+        if (!is.na(raw[[i]]$id) & raw[[i]]$id == id) {
+          raw = raw[[i]]
+          raw$start.time = Sys.time()
+          raw$status = 'STARTED'
+          write.json('log/log.json', raw)
           clear()
-        } else {
-          add.log(paste0('Incremeting action item selection for ', input$instrument, '.'))
-          i = which(input$action == instruments[[input$instrument]])
-          if (i == length(instruments[[input$instrument]])) {
-            clear()
-          } else {
-            updateRadioGroupButtons(inputId = 'action', selected = instruments[[input$instrument]][i+1])
-          }
-        }
-      }
-    })
-
-
-  ## Preserve edits
-  observeEvent(
-    input$events_cell_edit,
-    {
-      row  = input$events_cell_edit$row
-      col = input$events_cell_edit$col + 1
-      tmp = log()
-      tab = parse.log(tmp)
-
-      add.log(paste('Entry modified at (row, col)', row, col,'. Keys are:', names(tab)[col], 'and', tab$ID[row],'. New content: ', input$events_cell_edit$value, '.'))
-
-      for (i in 1:length(tmp)) {
-        if (tab$ID[row] == tmp[[i]]$ID) {
-          entry = tmp[[i]]
-          n = names(tab)[col]
-          entry[[n]] = input$events_cell_edit$value
-          write.json('log/log.json', entry)
-          add.log(paste('Original entry found for ', tab$ID[row], '. Appending updates for parameter', n, 'with value', input$events_cell_edit$value))
           return()
         }
+        i = i + 1
       }
-    })
+    }
+  )
+
+  observeEvent(
+    input$end_button,
+    {
+      id <- as.numeric(input$end_button)
+      message('End button for ', id)
+      raw = log()
+      parse = parseLog()
+
+      i = 1
+      while (i <= length(raw)) {
+        if (!is.na(raw[[i]]$id) & raw[[i]]$id == id) {
+          raw = raw[[i]]
+          raw$end.time = Sys.time()
+          raw$status = 'ENDED'
+          write.json('log/log.json', raw)
+          clear()
+          return()
+        }
+        i = i + 1
+      }
+    }
+  )
+
+
+  idList = reactive({
+    parse = parseLog()
+    used = paste(parse$event, collapse = ',', sep = ',')
+    used = as.numeric(strsplit(used, split = ',')[[1]])
+    used = used[!is.na(used)]
+
+    updateTextAreaInput(session, inputId = 'start.event', value = max(as.numeric(parse$id), na.rm = T) + 1)
+    updateTextAreaInput(session, inputId = 'start.sample', value = max(used, na.rm = T) + 1)
+
+    list(all = settings$event.ids, used = used, avail = settings$event.ids[!settings$event.ids %in% used])
+  })
+
+
+  observeEvent(
+    input$queue,
+    {
+      entry = blank.event()
+      entry$id = as.numeric(input$start.event)
+      add.log(paste('Logging user event', input$start.event,'.'))
+      if (is.na(as.numeric(input$start.event))) {
+        shiny::showNotification(type = 'error', 'Event ID not recognized as valid (must be numeric). No event queued.')
+        return()
+      }
+
+      entry$station = toupper(input$stn)
+      entry$cast = input$cast
+      entry$instrument = input$instrument
+      entry$author = input$author
+      entry$notes = input$entry
+      entry$n = as.numeric(input$n)
+      if (is.na(as.numeric(input$start.sample))) {
+        entry$events = max(idList()$used, na.rm = T) + 1
+        shiny::showNotification(type = 'warning', 'Events initial Geotraces ID not given (or recognized). Automatically identifying next available.')
+      } else {
+        entry$events = as.numeric(input$start.sample)
+      }
+      entry$events = paste(entry$events:(entry$events + as.numeric(input$n) - 1), collapse = ', ')
+
+      write.json(filename = 'log/log.json', entry = entry)
+      clear()
+    }
+  )
+
+
+  observeEvent(
+    input$submit_edit,
+    priority = 20,
+    {
+      message(Sys.time(), ': Submit Edit.')
+      raw = log()
+      parse = parseLog()
+      row  = input$events_rows_selected
+      id = parse$id[row]
+      message('Searching for ', id)
+      i = 1
+      while(i <= length(raw)) {
+        if (raw[[i]]$id == id) {
+          entry = raw[[i]]
+
+          entry = update.conpare(entry, 'start.time', 'event.time.start')
+          entry = update.conpare(entry, 'start.lon', 'event.lon.start')
+          entry = update.conpare(entry, 'start.lat', 'event.lat.start')
+          entry = update.conpare(entry, 'end.time', 'event.time.end')
+          entry = update.conpare(entry, 'end.lon', 'event.lon.end')
+          entry = update.conpare(entry, 'end.lat', 'event.lat.end')
+          entry = update.conpare(entry, 'events', 'event.ids')
+          entry = update.conpare(entry, 'author', 'event.author')
+          entry = update.conpare(entry, 'station', 'event.station')
+          entry = update.conpare(entry, 'cast', 'event.cast')
+          entry = update.conpare(entry, 'instrument', 'event.instrument')
+          entry = update.conpare(entry, 'events', 'event.ids')
+          entry = update.conpare(entry, 'notes', 'event.note')
+          break
+        }
+        i = i + 1
+      }
+      write.json('log/log.json', entry)
+      removeModal()
+    }
+  )
+
+  update.conpare = function(entry, name, input.name) {
+    message('Comparing ', name)
+    if (entry[[name]] != input[[input.name]]) {
+      add.log(message = paste('Changed', name, 'in', entry$id, 'from', entry[[name]], 'to', input[[input.name]]))
+      entry[[name]] = input[[input.name]]
+    }
+    entry
+  }
 
   observeEvent(
     input$edit_button,
     {
+      tmp = parseLog()
+
       row  = input$events_rows_selected
       add.log(paste('Entry selected for review is ', row, '.'))
       if (length(row) > 0) {
-        showModal(
+        entry_form("submit_edit")
+        updateTextInput(session, "event.time.start", value = tmp$start.time[input$events_rows_selected])
+        updateTextInput(session, "event.lon.start", value = tmp$start.lon[input$events_rows_selected])
+        updateTextInput(session, "event.lat.start", value = tmp$start.lat[input$events_rows_selected])
+        updateTextInput(session, "event.time.end", value = tmp$end.time[input$events_rows_selected])
+        updateTextInput(session, "event.lon.end", value = tmp$end.lon[input$events_rows_selected])
+        updateTextInput(session, "event.lat.end", value = tmp$end.lat[input$events_rows_selected])
 
-          modalDialog(
-            div(
-              id = ("entry_form"),
-              tags$head(tags$style(".modal-dialog{ width:760px}")),
-              tags$head(tags$style(HTML(".shiny-split-layout > div {overflow: visible}"))),
-              fluidPage(
-                fluidRow(
-                  p('Revision history:'),
-                  htmlOutput('history')
-                ),
-                easyClose = TRUE
-              )
-            )
-          )
-        )
+        updateTextAreaInput(session, "event.ids", value = tmp$events[input$events_rows_selected])
+
+        updateSelectInput(session, "event.author", selected = tmp$author[input$events_rows_selected])
+        updateTextInput(session, "event.station", value = tmp$station[input$events_rows_selected])
+        updateTextInput(session, "event.cast", value = tmp$cast[input$events_rows_selected])
+        updateTextInput(session, 'event.n', value = tmp$n[input$events_rows_selected])
+        updateSelectInput(session, "event.instrument", selected = tmp$instrument[input$events_rows_selected])
+
+        updateTextAreaInput(session, "event.note", value = tmp$notes[input$events_rows_selected])
       }
     }
   )
@@ -144,57 +274,38 @@ server = function(input, output, session) {
     input$delete_button,
     {
       row  = input$events_rows_selected
-
       if (length(row) == 1) {
-        tmp = log()
-        tab = parse.log(tmp)
-
-        add.log(paste0('Entry selected for deletion is ', row, ' (', tab$ID[row],').'))
-        for (i in 1:length(tmp)) {
-          if (tab$ID[row] == tmp[[i]]$ID) {
-            entry = tmp[[i]]
-            entry[['Action']] = 'Delete'
-            write.json('log/log.json', entry)
+        raw = log()
+        parse = parseLog()
+        add.log(paste0('Entry selected for deletion is ', row, ' (', parse$id[row],').'))
+        for (i in 1:length(raw)) {
+          if (parse$id[row] == raw[[i]]$id) {
+            raw = raw[[i]]
+            raw$status = 'DELETED'
+            write.json('log/log.json', raw)
             clear()
             return()
           }
         }
       }
-    })
-
-  observeEvent(
-    input$instrument,
-    {
-      updateRadioGroupButtons(inputId = 'action', choices = instruments[[input$instrument]])
     }
   )
 
-  observeEvent(input$about, {
-    shinyalert::shinyalert(title = 'About this app',
-                           text = 'This app was created by Tom Kelly (<a target = "_new_" href = "https://github.com/tbrycekelly">Github Link</a>).<br /> To learn more about this app and how to set it up please visit the <a target = "_new_" href = "http://github.com/tbrycekelly/ShipLogger">project page</a>.',
-                           html = T)
-  })
+
+  observeEvent(
+    input$about,
+    {
+      shinyalert::shinyalert(title = 'About this app',
+                             text = 'This app was created by Tom Kelly (<a target = "_new_" href = "https://github.com/tbrycekelly">Github Link</a>).<br /> To learn more about this app and how to set it up please visit the <a target = "_new_" href = "http://github.com/tbrycekelly/ShipLogger">project page</a>.',
+                             html = T)
+    }
+  )
 
 
   position = reactive({
     invalidateLater(settings$nmea.update*1000)
 
-    ## Retreive NMEA feed:
-    if (settings$nmea.type == 'serial') {
-      tmp = getSerialMessage(settings = settings)
-    } else if (settings$nmea.type == 'tcp') {
-      tmp = getTCPMessage(settings = settings)
-    } else if (settings$nmea.type == 'demo') {
-      tmp = getDemoMessage(settings = settings)
-    } else {
-      add.log('Incorrect NMEA type specified, no data returned.')
-      tmp = c()
-    }
-
-    # Catch no message condition:
-    if (length(tmp) < 1) {
-      return(list(lon = 0, lat = 0))
-    }
+    return(list(lon = 0, lat = 0)) ## TODO
 
     add.log(paste('Received', length(tmp), ' NMEA sentances from GPS feed.'))
     tmp = strsplit(tmp, ',')
@@ -219,14 +330,11 @@ server = function(input, output, session) {
       lon = -lon
     }
 
-    write.table(x = data.frame(time = Sys.time(), gps.time = time.raw, lon = lon, lat = lat), sep = ',', file = 'log/position.csv', append = T, col.names = F, row.names = F)
-
     list(lon = lon, lat = lat)
   })
 
 
   #### Outputs
-
   output$currentTime = renderText(
     {
       invalidateLater(1000, session)
@@ -241,66 +349,154 @@ server = function(input, output, session) {
     })
 
 
-  output$lon = renderText({
-    pos = position()
-    s = 'E'
-    if (pos$lon < 0) { s = 'W'; pos$lon = -pos$lon}
-    paste('Lon:', round(pos$lon, digits = 4), s)
-  })
+  output$lon = renderText(
+    {
+      pos = position()
+      s = 'E'
+      if (!is.na(pos$lon) & pos$lon < 0) {
+        s = 'W'; pos$lon = -pos$lon
+      }
+      paste('Lon:', round(pos$lon, digits = 4), s)
+    }
+  )
 
 
-  output$lat = renderText({
-    pos = position()
-    s = 'N'
-    if (pos$lat < 0) { s = 'S'; pos$lat = -pos$lat}
-    paste('Lat:', round(pos$lat, digits = 4), s)
-  })
+  output$lat = renderText(
+    {
+      pos = position()
+      s = 'N'
+      if (!is.na(pos$lat) & pos$lat < 0) {
+        s = 'S'; pos$lat = -pos$lat
+      }
+      paste('Lat:', round(pos$lat, digits = 4), s)
+    }
+  )
+
 
   output$events = renderDT(
     {
-      tmp = parse.log(log())
-      DT::datatable(tmp, editable = T, filter = 'top', rownames = F, selection = 'single')
+      tmp = parseLog()
+
+      tmp$button = ''
+      for (i in 1:nrow(tmp)) {
+        if (tmp$status[i] == 'QUEUED') {
+          tmp$button[i] = shinyInput(FUN = actionButton,
+                                     id = paste0(tmp$id[i]),
+                                     label = "Start",
+                                     onclick = 'Shiny.setInputValue(\"start_button\", this.id, {priority: \"event\"})',
+                                     style="color: #fff; background-color: #33aa77; border-color: #2e6da4"
+                                     )
+        } else if (tmp$status[i] == 'STARTED') {
+          tmp$button[i] = shinyInput(FUN = actionButton,
+                                     id = paste0(tmp$id[i]),
+                                     label = "End",
+                                     onclick = 'Shiny.setInputValue(\"end_button\", this.id, {priority: \"event\"})',
+                                     style="color: #fff; background-color: #d37a57; border-color: #ee0000"
+                                     )
+        }
+      }
+
+      nice = data.frame(Action = tmp$button,
+                        Status = tmp$status,
+                        Event.ID = tmp$id,
+                        Sample.IDs = tmp$events,
+                        Instrument = tmp$instrument,
+                        Station = tmp$station,
+                        Cast = tmp$cast,
+                        Start = '',
+                        End = '',
+                        Author = tmp$author,
+                        Notes = tmp$notes)
+      k = tmp$start.time != ''
+      nice$Start[k] = paste(tmp$start.time[k], '<br>Lon:', tmp$start.lon[k], '<br>Lat:', tmp$start.lat[k])
+      k = tmp$end.time != ''
+      nice$End[k] = paste(tmp$end.time[k], '<br>Lon:', tmp$end.lon[k], '<br>Lat:', tmp$end.lat[k])
+
+      DT::datatable(nice, editable = F, filter = 'top', rownames = F, selection = 'single', escape = F)
     })
 
-
-  output$recent = renderTable(
-    {
-      invalidateLater(1000*5)
-
-      tmp = parse.log(log())
-      tmp = tmp[,c('Time', 'Station', 'Instrument', 'Action')]
-      head(tmp, 8)
-    })
 
   output$history = renderUI({
 
     message(Sys.time(), ': Rendering history.')
     if (!is.null(input$events_rows_selected)) {
       tmp = log()
-      tab = parse.log(tmp)
+      tab = parseLog()
       record = readLines('log/diagnostics.log')
-
-      add.log(paste('Searching for the history of event', tab$ID[input$events_rows_selected], '.'))
-
-      record = record[grepl(tab$ID[input$events_rows_selected], record)]
+      add.log(paste('Searching for the history of event', tab$id[input$events_rows_selected], '.'))
+      record = record[grepl(tab$id[input$events_rows_selected], record)]
 
       return(HTML(paste0(record, collapse = '<br />')))
     }
   })
 
 
-  #### Download options:
+  output$idSummary = renderUI({
+    id = idList()
+    nex = which(id$all == max(id$used, na.rm = T))
+    if (is.na(nex)) {nex = 1}
+    res = tagList()
+    res[[1]] = tags$text('...')
 
+    for (i in pmax(1, nex - 20):pmin(nex + 20, length(id$all))) {
+      if (id$all[i] %in% id$used) {
+        res[[length(res) + 1]] = tags$text(id$all[i], style = "color:red")
+      } else if (i == nex + 1) {
+        res[[length(res) + 1]] = tags$text(id$all[i], style = "color:green")
+      } else {
+        res[[length(res) + 1]] = tags$text(id$all[i], style = "color:gray")
+      }
+    }
+
+    res[[length(res) + 1]] = tags$text('...')
+    res
+  })
+
+  output$eventSummary = renderUI({
+    parse = parseLog()
+    parse = parse[order(parse$id),]
+
+    res = tagList()
+
+    for (i in 1:nrow(parse)) {
+      if (parse$status[i] == 'QUEUED') {
+        res[[length(res) + 1]] = tags$text(parse$id[i], style = "color:red")
+      } else if (parse$status[i] == 'STARTED') {
+        res[[length(res) + 1]] = tags$text(parse$id[i], style = "color:green")
+      } else if (parse$status[i] == 'ENDED') {
+        res[[length(res) + 1]] = tags$text(parse$id[i], style = "color:white")
+      } else {
+        res[[length(res) + 1]] = tags$text(parse$id[i], style = "color:gray")
+      }
+    }
+
+    res
+  })
+
+  #### Download options:
   output$download.csv = downloadHandler(
     filename = function() {
         paste0('ShipLogger ', gsub(':', '', format(Sys.time())), '.csv')
       },
     content = function (file) {
       add.log('Preparing csv download.')
-      tmp = log()
-      tmp = parse.log(tmp)
+      tmp = parseLog()
+      nice = data.frame(Status = tmp$status,
+                        Event.ID = tmp$id,
+                        Sample.IDs = tmp$events,
+                        Instrument = tmp$instrument,
+                        Station = tmp$station,
+                        Cast = tmp$cast,
+                        Start.Time = tmp$start.time,
+                        Start.Lon = tmp$start.lon,
+                        Start.Lat = tmp$start.lat,
+                        End.Time = tmp$end.time,
+                        End.Lon = tmp$end.lon,
+                        End.Lat = tmp$end.lat,
+                        Author = tmp$author,
+                        Notes = tmp$notes)
 
-      write.csv(tmp, file)
+      write.csv(nice, file)
     })
 
 
@@ -310,10 +506,24 @@ server = function(input, output, session) {
     },
     content = function (file) {
       add.log('Preparing xlsx download.')
-      tmp = log()
-      tmp = parse.log(tmp)
+      tmp = parseLog()
 
-      openxlsx::write.xlsx(tmp, file)
+      nice = data.frame(Status = tmp$status,
+                        Event.ID = tmp$id,
+                        Sample.IDs = tmp$events,
+                        Instrument = tmp$instrument,
+                        Station = tmp$station,
+                        Cast = tmp$cast,
+                        Start.Time = tmp$start.time,
+                        Start.Lon = tmp$start.lon,
+                        Start.Lat = tmp$start.lat,
+                        End.Time = tmp$end.time,
+                        End.Lon = tmp$end.lon,
+                        End.Lat = tmp$end.lat,
+                        Author = tmp$author,
+                        Notes = tmp$notes)
+
+      openxlsx::write.xlsx(nice, file)
 
     })
 

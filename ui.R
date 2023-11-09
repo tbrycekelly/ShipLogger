@@ -1,96 +1,83 @@
-ui = fluidPage(
-  #useShinyalert(),
-  titlePanel(""),
+library(shiny)
+library(shinyWidgets)
+library(jsonlite)
+library(data.table)
+library(DT)
+library(serial)
+library(openxlsx)
+library(shinyalert)
+library(shinydashboardPlus)
 
-  ## Start Layout
-  sidebarLayout(
+source('config.R')
+source('functions.R')
 
-    ## Sidebar
-    sidebarPanel = sidebarPanel(
-      width = 3,
-      h3("Cruise Event Log"),
-      hr(),
-      h6("Current time: "),
-      h4(textOutput("currentTime", container = span)),
-      h4(textOutput("currentTime.local", container = span)),
-      h4(textOutput("lat", container = span)),
-      h4(textOutput("lon", container = span)),
-      br(),br(),
-      hr(),
-      fluidRow(
-        h2('Export:'),
-        downloadButton('download.csv', label = 'CSV'),
-        downloadButton('download.xlsx', label = 'XLSX'),
-        downloadButton('download.json', label = 'JSON')
-      ),
-      fluidRow(
-        br(),
-        downloadButton('download.pos', label = 'Positions'),
-        actionButton('about', 'About')
-      )
+ui = dashboardPage(
+  header = dashboardHeader(title = 'ShipLogger'),
+  title = 'ShipLogger',
+  skin = 'black',
+
+  sidebar = dashboardSidebar(
+    width = 350,
+    h3("Current time: "),
+    h4(textOutput("currentTime", container = span)),
+    h4(textOutput("currentTime.local", container = span)),
+    h4(textOutput("lat", container = span)),
+    h4(textOutput("lon", container = span)),
+    h3('Export:'),
+    downloadButton('download.csv', label = 'CSV'),
+    downloadButton('download.xlsx', label = 'XLSX'),
+    downloadButton('download.json', label = 'JSON'),
+    downloadButton('download.pos', label = 'Positions'),
+    hr(),
+    h3('Event IDs'),
+    uiOutput('eventSummary'),
+    br(),
+    h3('Sample IDs'),
+    uiOutput('idSummary'),
+    hr(),
+    br(),br(),
+    actionButton('about', 'About')
+  ),
+
+  body = dashboardBody(
+    box(title = 'Entry Queuing',
+        column(
+          width = 6,
+          shiny::textInput('start.event', label = 'Event ID', width = '10em'),
+          shiny::textInput('start.sample', label = 'Initial Geotraces ID', width = '10em'),
+          shiny::textInput('n', label = 'N samples', width = '6em', value = 1),
+          shiny::textInput("stn", label = 'Station', width = '10em'),
+          shiny::textInput("cast", label = 'Cast', width = '10em'),
+        ),
+        column(
+          width = 6,
+          shiny::selectInput("instrument",
+                             label = 'Instrument',
+                             choices = instruments,
+                             width = '35em'),
+          shiny::selectInput("author",
+                             label = 'Author',
+                             choices = authors,
+                             width = '35em'),
+          textInput("entry", label = 'Entry Comments',
+                    width = '35em'),
+
+          actionButton('queue', label = 'Queue Event'),
+          actionButton('clear.enter', label = 'Reset')
+        )
     ),
 
-    ## Main
-    mainPanel = mainPanel(
-      #width = 12,
-
-          title = "Operations",
-          h2("Event Log"),
-
-          fluidRow(
-            column(
-              width = 2,
-              shiny::textInput("cast", label = 'Cast', width = '10em'),
-              shiny::textInput("stn", label = 'Station', width = '10em')
-            ),
-            column(
-              width = 10,
-              shiny::selectInput("instrument",
-                                 label = 'Instrument',
-                                 choices = names(instruments),
-                                 width = '35em'),
-              textInput("entry", label = 'Entry Comments',
-                        width = '35em'),
-              shiny::selectInput("author",
-                                 label = 'Author',
-                                 choices = authors,
-                                 width = '35em')
-            ),
-          ),
-          br(),
-
-          ## Options
-          fluidRow(
-            column(
-              width = 9,
-              radioGroupButtons("action",
-                                 label = 'Actions Performed',
-                                 choices = '')
-              )
-            ),
-          br(),
-
-          ## Buttons
-          fluidRow(
-            actionButton('enter', label = 'Enter'),
-            actionButton('clear.enter', label = 'Reset'),
-            actionButton('refresh', label = 'Refresh', icon = icon('arrows-rotate'))
-          ),
-
-          ## Dataframe
-          fluidRow(
-            column(
-              width = 12,
-              hr(),
-              fluidRow(
-                actionButton("edit_button", "Details", icon("edit")),
-                actionButton("delete_button", "Delete", icon("trash-alt"))
-              ),
-              br(),
-              dataTableOutput("events")
-            )
-          )
-    ) # mainPanel
-  ) # sidebarLayout
+    ## Dataframe
+    box(
+      height = 800,
+      width = 12,
+      title = 'Event Log',
+      actionButton("edit_button", "Details/Edit", icon("edit")),
+      actionButton("delete_button", "Delete", icon("trash-alt")),
+      actionButton('refresh', label = 'Refresh', icon = icon('arrows-rotate')),
+      br(),
+      dataTableOutput("events", fill = T, height = 450)
+    )
+  )
 )
 

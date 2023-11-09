@@ -15,30 +15,13 @@ settings = list(
   nmea.file.pattern = '*',
   nmea.update = 10, #sec
   final.action = c('Recover', 'End'),
-  local.timezone = -8
+  local.timezone = -8,
+  event.ids = c(1:500),
+  sampe.ids = c(10050:18000)
 )
 
 
-## instrument List
-# A list of instruments available in the drop down menu along with associated actions (in order)
-# The order of actions is important. The selection will auto increment from the first one until
-# the final.action is logged (as set above in settings). When this happens all user input will
-# be cleared.
-instruments = list()
-
-instruments[['Bongo Net']] =    c('Deploy', 'At Depth', "Recover", 'Abort')
-instruments[["Calvet Net"]] =   c('Deploy', "Recover", 'Abort')
-instruments[['CTD']] =          c('Deploy', "Recover", 'Abort', 'At Depth', 'Deploy Prod', "Recover Prod", "Abort Prod")
-instruments[['DPI']] =          c('Deploy', "Recover", 'Abort')
-instruments[['Iron Fish']] =    c('Deploy', "Recover", 'Abort')
-instruments[['Methot']] =       c('Deploy', 'At Depth', "Recover", 'Abort')
-instruments[['Mooring Deployment']] = c('Start', "End", 'Abort')
-instruments[['Mooring Recovery']] = c('Start', "End", 'Abort')
-instruments[['MultiNet']] =     c('Deploy', 'At Depth', "Recover", 'Abort')
-instruments[['Sediment Trap']] = c('Deploy', "Recover", 'Abort')
-instruments[['TM CTD']] =       c('Deploy', "Recover", 'Abort', 'At Depth')
-instruments[['Vertical MultiNet']] = c('Deploy', "Recover", 'Abort')
-
+instruments = c('Trace Metal CTD', 'Standard CTD', 'Trace Metal Fish', 'Ice Camp', 'McLane Pump', 'Surface Pump', 'Underway Sample')
 
 authors = c(
   '',
