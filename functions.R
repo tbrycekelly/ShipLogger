@@ -27,8 +27,9 @@ init.log = function(path = 'log/log.json') {
     #tmp$start.time = Sys.time()
     #tmp$end.time = Sys.time()
     tmp$id = 1
-    tmp$events = 0
+    tmp$events = NA
     tmp$instrument = 'System'
+    tmp$status = 'ENDED'
     tmp$notes = 'Initialized ShipLogger.'
 
     writeLines(jsonlite::toJSON(tmp), 'log/log.json')
@@ -136,12 +137,14 @@ recordNMEA = function(settings) {
     }
 
     f = file('log/nmea.csv', open = 'a')
-    writeLines(paste0(Sys.time(), ', ', raw), con = f)
+    writeLines(paste0(Sys.time(), '; ', raw), con = f)
     writeLines(paste0(Sys.time(), '\t', raw))
     close(f)
 
+    raw = raw[grepl('GGA', toupper(raw))] # Filter for positions
+
     tryCatch({
-      saveRDS(list(time = Sys.time(), sentance = raw[length(raw)]), 'log/last.rds')
+      saveRDS(list(time = Sys.time(), sentance = raw), 'log/last.rds')
     }, error = function(e) {
       add.log(paste('Unable to write to last.rds. If problem persists, check that file is not locked. Error information:', e))
     }, warning = function(w) {
@@ -157,7 +160,7 @@ getSerialMessage = function(settings, con) {
   tryCatch({
     tmp = serial::read.serialConnection(con = con, n = 0)
 
-    tmp = tmp[grepl('GGA', toupper(tmp))]
+    #tmp = tmp[grepl('GGA', toupper(tmp))]
   }, error = function(e) {
     add.log(paste('Unable to retreive GPS feed from serial connection. Check NMEA settings if problem persists. Error information:', e), file = 'log/nmea.log')
   }, warning = function(w) {
@@ -173,7 +176,7 @@ getTCPMessage = function(settings, con) {
   tryCatch({
     tmp = readLines(con, n = -1)
 
-    tmp = tmp[grepl('GGA', toupper(tmp))]
+    #tmp = tmp[grepl('GGA', toupper(tmp))]
   }, error = function(e) {
     add.log(paste('Unable to parse GPS feed from TCP connection. Check NMEA settings if problem persists.'), file = 'log/nmea.log')
   }, warning = function(w) {

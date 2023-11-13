@@ -48,6 +48,7 @@ server = function(input, output, session) {
     updateTextInput(inputId = "stn", value = "")
     updateTextInput(inputId = "cast", value = "")
     updateTextInput(inputId = "n", value = "1")
+    updateTextInput(inputId = 'entry', value = '')
   }
 
 
@@ -85,6 +86,7 @@ server = function(input, output, session) {
                 selectInput('event.instrument', 'Instrument', instruments),
                 textAreaInput("event.ids", "Assigned IDs", placeholder = "", height = 75, width = "354px"),
                 textAreaInput("event.note", "Note", placeholder = "", height = 100, width = "354px"),
+                textInput("note.author", "Edit Author", placeholder = ""),
                 actionButton(button_id, "Submit"),
 
                 shiny::hr(),
@@ -176,7 +178,7 @@ server = function(input, output, session) {
       entry$id = as.numeric(input$start.event)
       add.log(paste('Logging user event', input$start.event,'.'))
       if (is.na(as.numeric(input$start.event))) {
-        shiny::showNotification(type = 'error', 'Event ID not recognized as valid (must be numeric). No event queued.')
+        shiny::showNotification(type = 'error', 'Geotraces Sample ID not recognized as valid (must be numeric). No event queued.')
         return()
       }
 
@@ -232,6 +234,7 @@ server = function(input, output, session) {
           entry = update.conpare(entry, 'instrument', 'event.instrument')
           entry = update.conpare(entry, 'events', 'event.ids')
           entry = update.conpare(entry, 'notes', 'event.note')
+          entry$notes = paste0(entry$notes, ' (',input$note.author, ')')
           break
         }
         i = i + 1
@@ -567,7 +570,7 @@ server = function(input, output, session) {
     },
     content = function (file) {
       add.log('Preparing Positions download.')
-      tmp = read.csv('log/position.csv')
+      tmp = read.csv('log/nmea.csv', header = F)
       openxlsx::write.xlsx(tmp, file)
     })
 
