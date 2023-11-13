@@ -114,34 +114,68 @@ add.log = function(message, file = 'log/diagnostics.log') {
 }
 
 
-getSerialMessage = function(settings) {
+recordNMEA = function(settings) {
+
+  ## Setup connection
+  if (settings$nmea.type == 'serial') {
+    con = serial::serialConnection(port = settings$nmea.serial.port, mode = settings$nmea.serial.mode, )
+  } else if (settings$nmea.type == 'tcp') {
+    con = socketConnection(host = settings$nmea.tcp.host, port = settings$nmea.tcp.port)
+  } else {
+    ## do nothing for demo.
+  }
+
+  ## Run indefinitely
+  while (T) {
+    if (settings$nmea.type == 'serial') {
+      raw = getSerialMessage(settings, con)
+    } else if (settings$nmea.type == 'tcp') {
+      raw = getTCPMessage(settings, con)
+    } else {
+      raw = getDemoMessage(settings)
+    }
+
+    f = file('log/nmea.csv', open = 'a')
+    writeLines(paste0(Sys.time(), ', ', raw), con = f)
+    writeLines(paste0(Sys.time(), '\t', raw))
+    close(f)
+
+    tryCatch({
+      saveRDS(list(time = Sys.time(), sentance = raw[length(raw)]), 'log/last.rds')
+    }, error = function(e) {
+      add.log(paste('Unable to write to last.rds. If problem persists, check that file is not locked. Error information:', e))
+    }, warning = function(w) {
+      add.log(paste('Warning when writing to last.rds. If problem persists, check that file is not locked. Warning information:', w))
+    })
+    Sys.sleep(settings$nmea.update)
+  }
+}
+
+
+getSerialMessage = function(settings, con) {
   tmp = c()
   tryCatch({
     tmp = serial::read.serialConnection(con = con, n = 0)
 
     tmp = tmp[grepl('GGA', toupper(tmp))]
   }, error = function(e) {
-    add.log(paste('Unable to retreive GPS feed from serial connection. Check NMEA settings if problem persists. Error information:', e))
+    add.log(paste('Unable to retreive GPS feed from serial connection. Check NMEA settings if problem persists. Error information:', e), file = 'log/nmea.log')
   }, warning = function(w) {
-    add.log(paste('Unable to retreive GPS feed from serial connection. Check NMEA settings if problem persists. Error information:', w))
-
+    add.log(paste('Unable to retreive GPS feed from serial connection. Check NMEA settings if problem persists. Error information:', w), file = 'log/nmea.log')
   })
 
   tmp
 }
 
 
-getTCPMessage = function(settings, delay = 2) {
+getTCPMessage = function(settings, con) {
   tmp = c()
   tryCatch({
-    gps = socketConnection(host = settings$nmea.tcp.host, port = settings$nmea.tcp.port)
-    Sys.sleep(delay)
-    tmp = readLines(gps, n = 100)
-    close(gps)
+    tmp = readLines(con, n = -1)
 
     tmp = tmp[grepl('GGA', toupper(tmp))]
   }, error = function(e) {
-    add.log(paste('Unable to parse GPS feed from TCP connection. Check NMEA settings if problem persists.'))
+    add.log(paste('Unable to parse GPS feed from TCP connection. Check NMEA settings if problem persists.'), file = 'log/nmea.log')
   }, warning = function(w) {
     # Do nothing.
   }
@@ -153,59 +187,6 @@ getTCPMessage = function(settings, delay = 2) {
 
 getDemoMessage = function(settings, delay = 2) {
   paste0('$GPGGA,123519,', 4807.038 + round(runif(1), 3), ',N,', round(01131.000 + runif(1), 3), ',E,1,08,,545.440,M,,,,*47')
-}
-
-
-getNMEAFile = function(settings) {
-  tmp = c()
-  tryCatch({
-    if (dir.exists(settings$nmea.file)) {
-      add.log('NMEA file is directory. Attempting to get newest file.')
-      path = list.files(settings$nmea.file, full.names = T, pattern = settings$nmea.file.pattern)
-      mtime = do.call(file.info, as.list(path))$mtime
-      l = which.max(mtime)
-      if (as.numeric(difftime(mtime[l], Sys.time(), units = 'mins')) > 5) {
-        add.log('NMEA file is too old (>5 min), rejecting data.')
-        return(tmp)
-      }
-      path = path[l]
-    } else if (file.exists(settings$nmea.file)) {
-      path = settings$nmea.file
-    } else {
-      return(tmp)
-    }
-
-    tmp = readLines(path[l])
-    tmp = tmp[grepl('GGA', toupper(tmp))] # INGGA and GPGGA sentences. TODO: toupper()?
-    if (settings$nmea.file.order == 'asc') {
-      tmp = rev(tmp)
-    }
-
-  }, error = function(e) {
-    add.log('Unable to parse GPS feed. Check NMEA settings if problem persists.')
-  }, warning = function(w) {
-    # Do nothing.
-  })
-  tmp[1]
-}
-
-
-testNMEA = function(settings, delay = 2) {
-  message('Testing NMEA settings:')
-
-  if (settings$nmea.type == 'serial') {
-    if (!toupper(settings$nmea.serial.port) %in% toupper(serial::listPorts())) {
-      message('N.B. Specified serial port does not appear to exist. Attempting anyway.')
-    }
-    tmp = getSerialMessage(settings = settings, delay = delay)
-  } else if (settings$nmea.type == 'tcp') {
-    tmp = getTCPMessage(settings = settings, delay = delay)
-  } else {
-    add.log('Incorrect NMEA type specified, no data returned.')
-    tmp = c()
-  }
-
-  message('Retreived ', length(tmp), ' NMEA sentences:\n', paste('\t', tmp, collapse = '\n'))
 }
 
 

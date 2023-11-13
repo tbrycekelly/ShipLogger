@@ -6,6 +6,7 @@ library(DT)
 library(serial)
 library(openxlsx)
 library(shinyalert)
+library(shinydashboard)
 library(shinydashboardPlus)
 
 source('config.R')
@@ -117,6 +118,8 @@ server = function(input, output, session) {
         if (!is.na(raw[[i]]$id) & raw[[i]]$id == id) {
           raw = raw[[i]]
           raw$start.time = Sys.time()
+          raw$start.lon = position()$lon
+          raw$start.lat = position()$lat
           raw$status = 'STARTED'
           write.json('log/log.json', raw)
           clear()
@@ -140,6 +143,8 @@ server = function(input, output, session) {
         if (!is.na(raw[[i]]$id) & raw[[i]]$id == id) {
           raw = raw[[i]]
           raw$end.time = Sys.time()
+          raw$end.lon = position()$lon
+          raw$end.lat = position()$lat
           raw$status = 'ENDED'
           write.json('log/log.json', raw)
           clear()
@@ -160,7 +165,7 @@ server = function(input, output, session) {
     updateTextAreaInput(session, inputId = 'start.event', value = max(as.numeric(parse$id), na.rm = T) + 1)
     updateTextAreaInput(session, inputId = 'start.sample', value = max(used, na.rm = T) + 1)
 
-    list(all = settings$event.ids, used = used, avail = settings$event.ids[!settings$event.ids %in% used])
+    list(all = settings$sample.ids, used = used, avail = settings$sample.ids[!settings$sample.ids %in% used])
   })
 
 
@@ -181,13 +186,17 @@ server = function(input, output, session) {
       entry$author = input$author
       entry$notes = input$entry
       entry$n = as.numeric(input$n)
-      if (is.na(as.numeric(input$start.sample))) {
-        entry$events = max(idList()$used, na.rm = T) + 1
-        shiny::showNotification(type = 'warning', 'Events initial Geotraces ID not given (or recognized). Automatically identifying next available.')
-      } else {
-        entry$events = as.numeric(input$start.sample)
+      if (!is.na(entry$n) & entry$n == 0) {
+        entry$events = NA
+      } else{
+        if (is.na(as.numeric(input$start.sample))) {
+          entry$events = max(idList()$used, na.rm = T) + 1
+          shiny::showNotification(type = 'warning', 'Events initial Geotraces ID not given (or recognized). Automatically identifying next available.')
+        } else {
+          entry$events = as.numeric(input$start.sample)
+        }
+        entry$events = paste(entry$events:(entry$events + as.numeric(input$n) - 1), collapse = ', ')
       }
-      entry$events = paste(entry$events:(entry$events + as.numeric(input$n) - 1), collapse = ', ')
 
       write.json(filename = 'log/log.json', entry = entry)
       clear()
@@ -302,36 +311,40 @@ server = function(input, output, session) {
   )
 
 
-  position = reactive({
-    invalidateLater(settings$nmea.update*1000)
+  position = reactiveFileReader(
+    intervalMillis = 2000,
+    session = session,
+    filePath = 'log/last.rds',
+    readFunc = function(x) {
+      latest = readRDS(x)
+      if (abs(as.numeric(difftime(latest$time, Sys.time(), units = 'mins'))) > 1) {
+        shiny::showNotification(type = 'error', session = session, 'Last position update was >1 minute ago. Check NMEA feed if problem persists.')
+      }
+      tmp = strsplit(latest$sentance, split = ',')
 
-    return(list(lon = 0, lat = 0)) ## TODO
+      time.raw = tmp[[1]][2]
+      lat.raw = tmp[[1]][3]
+      lon.raw = tmp[[1]][5]
+      north = toupper(tmp[[1]][4]) == 'N'
+      east = toupper(tmp[[1]][6]) == 'E'
 
-    add.log(paste('Received', length(tmp), ' NMEA sentances from GPS feed.'))
-    tmp = strsplit(tmp, ',')
+      lat = strsplit(lat.raw, '\\.')[[1]] ## e.g. 5057.4567
+      lon = strsplit(lon.raw, '\\.')[[1]] # e.g. 13745.5678
 
-    time.raw = tmp[[1]][2]
-    lat.raw = tmp[[1]][3]
-    lon.raw = tmp[[1]][5]
-    north = toupper(tmp[[1]][4]) == 'N'
-    east = toupper(tmp[[1]][6]) == 'E'
+      ##TODO
+      lat = as.numeric(substr(lat[1], 1, nchar(lat[1]) - 2)) + as.numeric(substr(lat[1], nchar(lat[1])-1, nchar(lat[1])))/60 + as.numeric(paste0('0.', lat[2]))/60
+      lon = as.numeric(substr(lon[1], 1, nchar(lon[1]) - 2)) + as.numeric(substr(lon[1], nchar(lon[1])-1, nchar(lon[1])))/60 + as.numeric(paste0('0.', lon[2]))/60
 
-    lat = strsplit(lat.raw, '\\.')[[1]] ## e.g. 5057.4567
-    lon = strsplit(lon.raw, '\\.')[[1]] # e.g. 13745.5678
+      if (!north) {
+        lat = -lat
+      }
+      if (!east) {
+        lon = -lon
+      }
 
-    ##TODO
-    lat = as.numeric(substr(lat[1], 1, nchar(lat[1]) - 2)) + as.numeric(substr(lat[1], nchar(lat[1])-1, nchar(lat[1])))/60 + as.numeric(paste0('0.', lat[2]))/60
-    lon = as.numeric(substr(lon[1], 1, nchar(lon[1]) - 2)) + as.numeric(substr(lon[1], nchar(lon[1])-1, nchar(lon[1])))/60 + as.numeric(paste0('0.', lon[2]))/60
-
-    if (!north) {
-      lat = -lat
+      list(lon = lon, lat = lat, time = latest$time)
     }
-    if (!east) {
-      lon = -lon
-    }
-
-    list(lon = lon, lat = lat)
-  })
+  )
 
 
   #### Outputs
@@ -369,6 +382,15 @@ server = function(input, output, session) {
         s = 'S'; pos$lat = -pos$lat
       }
       paste('Lat:', round(pos$lat, digits = 4), s)
+    }
+  )
+
+  output$age = renderText(
+    {
+      invalidateLater(1000)
+      pos = position()
+      delta = abs(as.numeric(difftime(Sys.time(), pos$time, units = 'secs')))
+      paste('Fix Age:', round(delta), 'seconds.')
     }
   )
 

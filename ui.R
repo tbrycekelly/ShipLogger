@@ -6,6 +6,7 @@ library(DT)
 library(serial)
 library(openxlsx)
 library(shinyalert)
+library(shinydashboard)
 library(shinydashboardPlus)
 
 source('config.R')
@@ -23,6 +24,8 @@ ui = dashboardPage(
     h4(textOutput("currentTime.local", container = span)),
     h4(textOutput("lat", container = span)),
     h4(textOutput("lon", container = span)),
+    h4(textOutput("age", container = span)),
+    br(),
     h3('Export:'),
     downloadButton('download.csv', label = 'CSV'),
     downloadButton('download.xlsx', label = 'XLSX'),

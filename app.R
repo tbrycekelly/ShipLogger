@@ -10,8 +10,7 @@ library(shinyalert)
 source('config.R')
 source('functions.R')
 
-## Test NMEA (if applicable)
-#testNMEA(settings = settings)
+rstudioapi::jobRunScript('nmea.R')
 
 # Run App
 shiny::runApp(host = '0.0.0.0', port = 80)
