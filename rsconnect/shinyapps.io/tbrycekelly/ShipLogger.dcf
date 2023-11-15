@@ -5,7 +5,7 @@ account: tbrycekelly
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 10197770
-bundleId: 7807100
+bundleId: 7923084
 url: https://tbrycekelly.shinyapps.io/ShipLogger/
 version: 1
 asMultiple: FALSE

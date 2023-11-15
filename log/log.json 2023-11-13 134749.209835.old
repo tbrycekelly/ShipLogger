@@ -1,0 +1,2 @@
+{"id":[1],"events":[null],"n":[0],"status":["ENDED"],"start.time":[""],"start.lon":[""],"start.lat":[""],"end.time":[""],"end.lon":[""],"end.lat":[""],"station":[""],"cast":[""],"instrument":["System"],"author":[""],"notes":["Initialized ShipLogger."]}
+{"id":[2],"events":["10050"],"n":[1],"status":["QUEUED"],"start.time":[""],"start.lon":[""],"start.lat":[""],"end.time":[""],"end.lon":[""],"end.lat":[""],"station":["1"],"cast":["1"],"instrument":["Surface TM (Fish)"],"author":["Person2"],"notes":["Coming onto station."]}

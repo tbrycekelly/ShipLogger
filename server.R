@@ -520,8 +520,9 @@ server = function(input, output, session) {
                         End.Lat = tmp$end.lat,
                         Author = tmp$author,
                         Notes = tmp$notes)
-
-      write.csv(nice, file)
+      if (!settings$demo.mode) {
+        write.csv(nice, file)
+      }
     })
 
 
@@ -547,9 +548,9 @@ server = function(input, output, session) {
                         End.Lat = tmp$end.lat,
                         Author = tmp$author,
                         Notes = tmp$notes)
-
-      openxlsx::write.xlsx(nice, file)
-
+      if (!settings$demo.mode) {
+        openxlsx::write.xlsx(nice, file)
+      }
     })
 
 
@@ -560,7 +561,9 @@ server = function(input, output, session) {
     content = function (file) {
       add.log('Preparing JSON download.')
       tmp = readLines('log/log.json')
-      writeLines(tmp, file)
+      if (!settings$demo.mode) {
+        writeLines(tmp, file)
+      }
     })
 
 
@@ -571,8 +574,8 @@ server = function(input, output, session) {
     content = function (file) {
       add.log('Preparing Positions download.')
       tmp = read.csv('log/nmea.csv', header = F)
-      openxlsx::write.xlsx(tmp, file)
+      if (!settings$demo.mode) {
+        openxlsx::write.xlsx(tmp, file)
+      }
     })
-
-
 }

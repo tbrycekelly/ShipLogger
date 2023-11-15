@@ -12,7 +12,8 @@ settings = list(
   nmea.update = 5, # [seconds] 5 to 10 works well.
   local.timezone = -8, # hour offset from computer time.
   event.ids = c(0:1000),
-  sample.ids = c(10050:18000)
+  sample.ids = c(10050:18000),
+  demo.mode = F
 )
 
 

@@ -61,6 +61,9 @@ blank.event = function(n = 1) {
 
 ## Take log entry message and write it to JSON log file.
 write.json = function(filename, entry) {
+  if (settings$demo.mode) {
+    return()
+  }
   entry = as.list(entry)
 
   dat = jsonlite::toJSON(entry)
@@ -108,6 +111,9 @@ load.log = function(file = 'log/log.json') {
 
 
 add.log = function(message, file = 'log/diagnostics.log') {
+  if (settings$demo.mode) {
+    return()
+  }
   f = file(file, open = 'a')
   writeLines(paste0(Sys.time(), ': ', message), con = f)
   writeLines(paste0(Sys.time(), ': ', message))
@@ -137,19 +143,19 @@ recordNMEA = function(settings) {
     }
 
     f = file('log/nmea.csv', open = 'a')
-    writeLines(paste0(Sys.time(), '; ', raw), con = f)
-    writeLines(paste0(Sys.time(), '\t', raw))
-    close(f)
+      writeLines(paste0(Sys.time(), '; ', raw), con = f)
+      writeLines(paste0(Sys.time(), '\t', raw))
+      close(f)
+      raw = raw[grepl('GGA', toupper(raw))] # Filter for positions
 
-    raw = raw[grepl('GGA', toupper(raw))] # Filter for positions
+      tryCatch({
+        saveRDS(list(time = Sys.time(), sentance = raw), 'log/last.rds')
+      }, error = function(e) {
+        add.log(paste('Unable to write to last.rds. If problem persists, check that file is not locked. Error information:', e))
+      }, warning = function(w) {
+        add.log(paste('Warning when writing to last.rds. If problem persists, check that file is not locked. Warning information:', w))
+      })
 
-    tryCatch({
-      saveRDS(list(time = Sys.time(), sentance = raw), 'log/last.rds')
-    }, error = function(e) {
-      add.log(paste('Unable to write to last.rds. If problem persists, check that file is not locked. Error information:', e))
-    }, warning = function(w) {
-      add.log(paste('Warning when writing to last.rds. If problem persists, check that file is not locked. Warning information:', w))
-    })
     Sys.sleep(settings$nmea.update)
   }
 }
