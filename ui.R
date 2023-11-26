@@ -76,9 +76,9 @@ ui = dashboardPage(
       width = 12,
       title = 'Event Log',
       actionButton("edit_button", "Details/Edit", icon("edit")),
-      actionButton("delete_button", "Delete", icon("trash-alt")),
       actionButton('refresh', label = 'Refresh', icon = icon('arrows-rotate')),
-      br(),
+      actionButton("delete_button", "Delete", icon("trash-alt")),
+      br(),br(),
       dataTableOutput("events", fill = T, height = 450)
     )
   )

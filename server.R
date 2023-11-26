@@ -51,6 +51,41 @@ server = function(input, output, session) {
     updateTextInput(inputId = 'entry', value = '')
   }
 
+  observeEvent(
+    input$idCheck,
+    {
+      proposedID = input$event.ids
+      if (is.null(proposedID)) { # No text entered, do nothing.
+        return()
+      }
+
+      proposedID = as.numeric(strsplit(proposedID, ',')[[1]]) # Split into numbers
+      usedID = idList()
+
+      parse = parseLog()
+      row  = input$events_rows_selected
+      currentID = as.numeric(strsplit(parse$events[row], ',')[[1]])
+      usedID$used = usedID$used[!(usedID$used %in% currentID)]
+      usedID$avail = c(usedID$avail, currentID)
+
+      message('Current IDs:\t', paste(currentID, collapse = ', '))
+      message('Proposed  IDs:\t', paste(proposedID, collapse = ', '))
+      message('Used IDs: \t', paste(usedID$used, collapse = ', '))
+
+      if (any(proposedID %in% usedID$used)) {
+        updateTextInput(session, 'idCheckStatus', value = 'Duplicates')
+        return()
+      }
+
+      if (all(proposedID %in% usedID$avail)) { # All of the proposed IDs are valid AND available to be used.
+        updateTextInput(session, 'idCheckStatus', value = 'Valid')
+        return()
+      }
+
+      updateTextInput(session, 'idCheckStatus', value = 'Invalid')
+    }
+  )
+
 
   #Form for data entry
   entry_form <- function(button_id){
@@ -58,7 +93,7 @@ server = function(input, output, session) {
     showModal(
       modalDialog(
         div(id=("entry_form"),
-            tags$head(tags$style(".modal-dialog{ width:860px}")),
+            tags$head(tags$style(".modal-dialog{ width:950px}")),
             tags$head(tags$style(HTML(".shiny-split-layout > div {overflow: visible}"))),
             fluidPage(
               fluidRow(
@@ -84,14 +119,22 @@ server = function(input, output, session) {
                   textInput("event.cast", 'Cast', placeholder = "")
                 ),
                 selectInput('event.instrument', 'Instrument', instruments),
-                textAreaInput("event.ids", "Assigned IDs", placeholder = "", height = 75, width = "354px"),
+
+                splitLayout(
+                  cellWidths = c('375px', '200px', '150px'),
+                  cellArgs = list(style = "vertical-align: middle"),
+                  textAreaInput("event.ids", "Assigned IDs", placeholder = "", height = 75, width = "354px"),
+                  actionButton('idCheck', label = 'Check Sample IDs'),
+                  textInput('idCheckStatus', '', value = 'unknown', width = '10em')
+                ),
+
                 textAreaInput("event.note", "Note", placeholder = "", height = 100, width = "354px"),
                 textInput("note.author", "Edit Author", placeholder = ""),
                 actionButton(button_id, "Submit"),
-
+                shiny::hr(),
                 shiny::hr(),
                 p('Revision history:'),
-                htmlOutput('history')
+                dataTableOutput('history')
               ),
               easyClose = TRUE
             )
@@ -441,17 +484,28 @@ server = function(input, output, session) {
     })
 
 
-  output$history = renderUI({
+  output$history = renderDT({
 
     message(Sys.time(), ': Rendering history.')
     if (!is.null(input$events_rows_selected)) {
-      tmp = log()
+      tmp = parse.log(log(), T)
       tab = parseLog()
-      record = readLines('log/diagnostics.log')
-      add.log(paste('Searching for the history of event', tab$id[input$events_rows_selected], '.'))
-      record = record[grepl(tab$id[input$events_rows_selected], record)]
 
-      return(HTML(paste0(record, collapse = '<br />')))
+      add.log(paste('Searching for the history of event', tab$id[input$events_rows_selected], '.'))
+      tmp = tmp[tab$id[input$events_rows_selected] == tmp$id,]
+
+      nice = data.frame(Status = tmp$status,
+                        Event.ID = tmp$id,
+                        Station = tmp$station,
+                        Cast = tmp$cast,
+                        Start = '',
+                        End = '')
+      k = tmp$start.time != ''
+      nice$Start[k] = paste(tmp$start.time[k], '<br>Lon:', tmp$start.lon[k], '<br>Lat:', tmp$start.lat[k])
+      k = tmp$end.time != ''
+      nice$End[k] = paste(tmp$end.time[k], '<br>Lon:', tmp$end.lon[k], '<br>Lat:', tmp$end.lat[k])
+
+      DT::datatable(nice, editable = F, rownames = F, escape = F, filter = 'none', autoHideNavigation = F)
     }
   })
 

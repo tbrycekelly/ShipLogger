@@ -24,9 +24,7 @@ shinyInput <- function(FUN, id, ...) {
 init.log = function(path = 'log/log.json') {
   if (!file.exists('log/log.json')) {
     tmp = as.list(blank.event())
-    #tmp$start.time = Sys.time()
-    #tmp$end.time = Sys.time()
-    tmp$id = 1
+    tmp$id = settings$event.ids[1]
     tmp$events = NA
     tmp$instrument = 'System'
     tmp$status = 'ENDED'
@@ -82,7 +80,7 @@ write.json = function(filename, entry) {
 
 
 ## Parse json log entries into data.frame
-parse.log = function(json) {
+parse.log = function(json, all = F) {
   log = blank.event(length(json))
 
   for (i in 1:length(json)) {
@@ -96,7 +94,9 @@ parse.log = function(json) {
 
   ## Remove edits and deletions. Then order
   log$id = as.numeric(log$id)
-  log = log[!duplicated(log$id) & !is.na(log$id),]
+  if (!all) {
+    log = log[!duplicated(log$id) & !is.na(log$id),]
+  }
   log = log[order(log$id, decreasing = T),]
 
   log
@@ -125,7 +125,8 @@ recordNMEA = function(settings) {
 
   ## Setup connection
   if (settings$nmea.type == 'serial') {
-    con = serial::serialConnection(port = settings$nmea.serial.port, mode = settings$nmea.serial.mode, )
+    con = serial::serialConnection(port = settings$nmea.serial.port, mode = settings$nmea.serial.mode)
+    open(con)
   } else if (settings$nmea.type == 'tcp') {
     con = socketConnection(host = settings$nmea.tcp.host, port = settings$nmea.tcp.port)
   } else {
@@ -141,6 +142,8 @@ recordNMEA = function(settings) {
     } else {
       raw = getDemoMessage(settings)
     }
+
+    raw = strsplit(raw, '\\$')[[1]]
 
     f = file('log/nmea.csv', open = 'a')
       writeLines(paste0(Sys.time(), '; ', raw), con = f)
