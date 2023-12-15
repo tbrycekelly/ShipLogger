@@ -145,19 +145,23 @@ recordNMEA = function(settings) {
 
     raw = strsplit(raw, '\\$')[[1]]
 
-    f = file('log/nmea.csv', open = 'a')
-      writeLines(paste0(Sys.time(), '; ', raw), con = f)
-      writeLines(paste0(Sys.time(), '\t', raw))
-      close(f)
-      raw = raw[grepl('GGA', toupper(raw))] # Filter for positions
+    if (file.exists('log/nmea.csv') & file.size('log/nmea.log') > 2e7) {
+      file.rename('log/nmea.log', paste0('log/nmea ', gsub(':', '', Sys.time()), '.log'))
+    }
 
-      tryCatch({
-        saveRDS(list(time = Sys.time(), sentance = raw), 'log/last.rds')
-      }, error = function(e) {
-        add.log(paste('Unable to write to last.rds. If problem persists, check that file is not locked. Error information:', e))
-      }, warning = function(w) {
-        add.log(paste('Warning when writing to last.rds. If problem persists, check that file is not locked. Warning information:', w))
-      })
+    f = file('log/nmea.csv', open = 'a')
+    writeLines(paste0(Sys.time(), '; ', raw), con = f)
+    writeLines(paste0(Sys.time(), '\t', raw))
+    close(f)
+    raw = raw[grepl('GGA', toupper(raw))] # Filter for positions
+
+    tryCatch({
+      saveRDS(list(time = Sys.time(), sentance = raw), 'log/last.rds')
+    }, error = function(e) {
+      add.log(paste('Unable to write to last.rds. If problem persists, check that file is not locked. Error information:', e))
+    }, warning = function(w) {
+      add.log(paste('Warning when writing to last.rds. If problem persists, check that file is not locked. Warning information:', w))
+    })
 
     Sys.sleep(settings$nmea.update)
   }
