@@ -79,7 +79,7 @@ ui = dashboardPage(
       actionButton('refresh', label = 'Refresh', icon = icon('arrows-rotate')),
       actionButton("delete_button", "Delete", icon("trash-alt")),
       br(),br(),
-      dataTableOutput("events", fill = T, height = 450)
+      DT::dataTableOutput("events", fill = T, height = 450)
     )
   )
 )

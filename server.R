@@ -134,7 +134,7 @@ server = function(input, output, session) {
                 shiny::hr(),
                 shiny::hr(),
                 p('Revision history:'),
-                dataTableOutput('history')
+                DT::dataTableOutput('history')
               ),
               easyClose = TRUE
             )
@@ -275,7 +275,6 @@ server = function(input, output, session) {
           entry = update.conpare(entry, 'station', 'event.station')
           entry = update.conpare(entry, 'cast', 'event.cast')
           entry = update.conpare(entry, 'instrument', 'event.instrument')
-          entry = update.conpare(entry, 'events', 'event.ids')
           entry = update.conpare(entry, 'notes', 'event.note')
           entry$notes = paste0(entry$notes, ' (',input$note.author, ')')
           break
@@ -289,7 +288,7 @@ server = function(input, output, session) {
 
   update.conpare = function(entry, name, input.name) {
     message('Comparing ', name)
-    if (entry[[name]] != input[[input.name]]) {
+    if (is.na(entry[[name]]) | (entry[[name]] != input[[input.name]])) {
       add.log(message = paste('Changed', name, 'in', entry$id, 'from', entry[[name]], 'to', input[[input.name]]))
       entry[[name]] = input[[input.name]]
     }
@@ -513,7 +512,8 @@ server = function(input, output, session) {
   output$idSummary = renderUI({
     id = idList()
     nex = which(id$all == max(id$used, na.rm = T))
-    if (is.na(nex)) {nex = 1}
+    if (length(nex) < 1) {nex = 1}
+    message(nex)
     res = tagList()
     res[[1]] = tags$text('...')
 
@@ -627,7 +627,8 @@ server = function(input, output, session) {
     },
     content = function (file) {
       add.log('Preparing Positions download.')
-      tmp = read.csv('log/nmea.csv', header = F)
+      tmp = read.csv('log/nmea.csv', header = F, sep = ';')
+      colnames(tmp) = c('SystemTime', 'Sentence')
       if (!settings$demo.mode) {
         openxlsx::write.xlsx(tmp, file)
       }
