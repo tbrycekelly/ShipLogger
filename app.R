@@ -6,6 +6,8 @@ library(DT)
 library(serial)
 library(openxlsx)
 library(shinyalert)
+library(shinydashboard)
+library(shinydashboardPlus)
 
 source('config.R')
 source('functions.R')

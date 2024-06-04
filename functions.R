@@ -24,8 +24,7 @@ shinyInput <- function(FUN, id, ...) {
 init.log = function(path = 'log/log.json') {
   if (!file.exists('log/log.json')) {
     tmp = as.list(blank.event())
-    tmp$id = settings$event.ids[1]
-    tmp$events = NA
+    tmp$event = 0
     tmp$instrument = 'System'
     tmp$status = 'ENDED'
     tmp$notes = 'Initialized ShipLogger.'
@@ -37,13 +36,15 @@ init.log = function(path = 'log/log.json') {
 blank.event = function(n = 1) {
 
   data.frame(
-    id  = sapply(runif(n), digest::digest),
-    events = '',
-    n = 0,
+    event.id  = sapply(runif(n), digest::digest),
+    event = NA,
     status = 'QUEUED',
     start.time = '',
     start.lon = '',
     start.lat = '',
+    atdepth.time = '',
+    atdepth.lon = '',
+    atdepth.lat = '',
     end.time = '',
     end.lon = '',
     end.lat = '',
@@ -93,11 +94,10 @@ parse.log = function(json, all = F) {
 
 
   ## Remove edits and deletions. Then order
-  log$id = as.numeric(log$id)
   if (!all) {
-    log = log[!duplicated(log$id) & !is.na(log$id),]
+    log = log[!duplicated(log$event.id) & !is.na(log$event.id),]
   }
-  log = log[order(log$id, decreasing = T),]
+  log = log[order(as.numeric(log$event), decreasing = T),]
 
   log
 }
@@ -124,6 +124,7 @@ add.log = function(message, file = 'log/diagnostics.log') {
 recordNMEA = function(settings) {
 
   ## Setup connection
+  # Do this block one time to initialize & test feeds.
   if (settings$nmea.type == 'serial') {
     con = serial::serialConnection(port = settings$nmea.serial.port, mode = settings$nmea.serial.mode)
     open(con)
@@ -133,7 +134,10 @@ recordNMEA = function(settings) {
     ## do nothing for demo.
   }
 
+  Sys.sleep(settings$nmea.update) # for good measure, wait 1 update period.
+
   ## Run indefinitely
+  # Main body of the script which should just run indefinitely.
   while (T) {
     if (settings$nmea.type == 'serial') {
       raw = getSerialMessage(settings, con)
@@ -145,8 +149,11 @@ recordNMEA = function(settings) {
 
     raw = strsplit(raw, '\\$')[[1]]
 
-    if (file.exists('log/nmea.csv') & file.size('log/nmea.log') > 2e7) {
-      file.rename('log/nmea.log', paste0('log/nmea ', gsub(':', '', Sys.time()), '.log'))
+    ## Archive and start new lof
+    if (file.exists('log/nmea.csv')) {
+      if (file.size('log/nmea.csv') > 2e7) {
+        file.rename('log/nmea.csv', paste0('log/nmea ', gsub(':', '', Sys.time()), '.csv'))
+      }
     }
 
     f = file('log/nmea.csv', open = 'a')
@@ -172,8 +179,6 @@ getSerialMessage = function(settings, con) {
   tmp = c()
   tryCatch({
     tmp = serial::read.serialConnection(con = con, n = 0)
-
-    #tmp = tmp[grepl('GGA', toupper(tmp))]
   }, error = function(e) {
     add.log(paste('Unable to retreive GPS feed from serial connection. Check NMEA settings if problem persists. Error information:', e), file = 'log/nmea.log')
   }, warning = function(w) {
@@ -188,8 +193,6 @@ getTCPMessage = function(settings, con) {
   tmp = c()
   tryCatch({
     tmp = readLines(con, n = -1)
-
-    #tmp = tmp[grepl('GGA', toupper(tmp))]
   }, error = function(e) {
     add.log(paste('Unable to parse GPS feed from TCP connection. Check NMEA settings if problem persists.'), file = 'log/nmea.log')
   }, warning = function(w) {

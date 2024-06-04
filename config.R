@@ -11,8 +11,6 @@ settings = list(
   nmea.serial.mode = "9600,n,8,1", # Set baud rate here, typically either 9600 or 4600
   nmea.update = 5, # [seconds] 5 to 10 works well.
   local.timezone = -8, # hour offset from computer time.
-  event.ids = c(0:2000),
-  sample.ids = c(17000:20000),
   demo.mode = F
 )
 

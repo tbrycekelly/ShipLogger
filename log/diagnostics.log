@@ -1,19 +1,389 @@
-2023-11-13 13:34:45.684187: New session created. Loaded source files.
-2023-11-13 13:34:45.776823: Initialization finished.
-2023-11-13 13:47:02.238011: New session created. Loaded source files.
-2023-11-13 13:47:02.278407: Initialization finished.
-2023-11-13 13:47:32.66878: Logging user event 2 .
-2023-11-13 13:47:32.715816: Clearing user input fields.
-2023-11-13 13:47:49.176113: Logging user event 3 .
-2023-11-13 13:47:49.258244: Clearing user input fields.
-2023-11-13 13:48:17.133738: Logging user event 4 .
-2023-11-13 13:48:17.167351: Clearing user input fields.
-2023-11-13 13:48:37.814128: Logging user event 5 .
-2023-11-13 13:48:37.878408: Clearing user input fields.
-2023-11-13 13:48:59.091889: Logging user event 6 .
-2023-11-13 13:48:59.131316: Clearing user input fields.
-2023-11-13 13:49:02.988596: Clearing user input fields.
-2023-11-13 13:49:08.904115: Clearing user input fields.
-2023-11-13 13:49:12.610845: Clearing user input fields.
-2023-11-13 13:49:15.273074: Clearing user input fields.
-2023-11-13 13:49:17.598191: Clearing user input fields.
+2024-06-04 14:13:37.578546: New session created. Loaded source files.
+2024-06-04 14:13:37.584191: Initialization finished.
+2024-06-04 14:13:48.239166: Clearing user input fields.
+2024-06-04 14:13:51.456766: Clearing user input fields.
+2024-06-04 14:13:51.968112: Clearing user input fields.
+2024-06-04 14:13:57.019783: Logging user event  .
+2024-06-04 14:13:57.028126: Clearing user input fields.
+2024-06-04 14:14:01.172061: Clearing user input fields.
+2024-06-04 14:14:26.913913: New session created. Loaded source files.
+2024-06-04 14:14:26.9188: Initialization finished.
+2024-06-04 14:14:29.463248: Clearing user input fields.
+2024-06-04 14:14:33.204638: Logging user event  .
+2024-06-04 14:14:33.413746: Clearing user input fields.
+2024-06-04 14:14:36.757538: Clearing user input fields.
+2024-06-04 14:16:02.051012: New session created. Loaded source files.
+2024-06-04 14:16:02.056181: Initialization finished.
+2024-06-04 14:16:41.855393: New session created. Loaded source files.
+2024-06-04 14:16:41.863628: Initialization finished.
+2024-06-04 14:16:43.103837: New session created. Loaded source files.
+2024-06-04 14:16:43.109896: Initialization finished.
+2024-06-04 14:16:43.897886: New session created. Loaded source files.
+2024-06-04 14:16:43.902463: Initialization finished.
+2024-06-04 14:18:22.678623: New session created. Loaded source files.
+2024-06-04 14:18:22.683835: Initialization finished.
+2024-06-04 14:18:24.344225: Start button for 1cdaab2e9277e8e26852e4a915b860dc
+2024-06-04 14:20:05.755933: New session created. Loaded source files.
+2024-06-04 14:20:05.761556: Initialization finished.
+2024-06-04 14:20:07.420765: New session created. Loaded source files.
+2024-06-04 14:20:07.432364: Initialization finished.
+2024-06-04 14:20:08.025197: New session created. Loaded source files.
+2024-06-04 14:20:08.036093: Initialization finished.
+2024-06-04 14:20:08.534637: New session created. Loaded source files.
+2024-06-04 14:20:08.550385: Initialization finished.
+2024-06-04 14:20:08.805092: New session created. Loaded source files.
+2024-06-04 14:20:08.809168: Initialization finished.
+2024-06-04 14:20:08.93996: New session created. Loaded source files.
+2024-06-04 14:20:08.94565: Initialization finished.
+2024-06-04 14:20:45.447228: New session created. Loaded source files.
+2024-06-04 14:20:45.452007: Initialization finished.
+2024-06-04 14:21:27.991381: New session created. Loaded source files.
+2024-06-04 14:21:27.997837: Initialization finished.
+2024-06-04 14:21:32.306911: Clearing user input fields.
+2024-06-04 14:21:36.715716: Logging user event  .
+2024-06-04 14:21:36.922056: Clearing user input fields.
+2024-06-04 14:26:27.830039: New session created. Loaded source files.
+2024-06-04 14:26:27.835019: Initialization finished.
+2024-06-04 14:26:31.189882: New session created. Loaded source files.
+2024-06-04 14:26:31.195978: Initialization finished.
+2024-06-04 14:26:31.943944: New session created. Loaded source files.
+2024-06-04 14:26:31.949146: Initialization finished.
+2024-06-04 14:27:57.930086: New session created. Loaded source files.
+2024-06-04 14:27:57.935345: Initialization finished.
+2024-06-04 14:27:58.946182: New session created. Loaded source files.
+2024-06-04 14:27:58.952415: Initialization finished.
+2024-06-04 14:28:45.927123: New session created. Loaded source files.
+2024-06-04 14:28:45.93195: Initialization finished.
+2024-06-04 14:28:45.972188: Adding queue button for event 
+2024-06-04 14:29:20.951023: New session created. Loaded source files.
+2024-06-04 14:29:20.955749: Initialization finished.
+2024-06-04 14:29:20.99056: Adding queue button for event 80b3ab364ed6a4806540093ec151a83e
+2024-06-04 14:29:23.282441: Start button for 80b3ab364ed6a4806540093ec151a83e
+2024-06-04 14:29:23.283428: Writting update to log file.
+2024-06-04 14:29:23.488851: Clearing user input fields.
+2024-06-04 14:29:27.936971: Clearing user input fields.
+2024-06-04 14:29:40.829275: Logging user event 872aad1d6d1e668b748f92b8c3ce02e2 .
+2024-06-04 14:29:41.037448: Clearing user input fields.
+2024-06-04 14:29:41.161826: Adding queue button for event 872aad1d6d1e668b748f92b8c3ce02e2
+2024-06-04 14:29:45.550221: Start button for 872aad1d6d1e668b748f92b8c3ce02e2
+2024-06-04 14:29:45.55101: Writting update to log file.
+2024-06-04 14:29:45.755003: Clearing user input fields.
+2024-06-04 14:29:49.602512: Clearing user input fields.
+2024-06-04 14:34:40.640203: New session created. Loaded source files.
+2024-06-04 14:34:40.645493: Initialization finished.
+2024-06-04 14:34:47.632135: Logging user event f7287dbd2ed393abf040516b6e1a3382 .
+2024-06-04 14:34:47.840956: Clearing user input fields.
+2024-06-04 14:34:47.883717: Adding queue button for event f7287dbd2ed393abf040516b6e1a3382
+2024-06-04 14:34:49.651596: Start button for f7287dbd2ed393abf040516b6e1a3382
+2024-06-04 14:34:49.652778: Writting update to log file.
+2024-06-04 14:34:49.869497: Clearing user input fields.
+2024-06-04 14:34:53.24653: ATDEPTH button for f7287dbd2ed393abf040516b6e1a3382
+2024-06-04 14:34:53.247619: Writting update to log file.
+2024-06-04 14:34:53.453588: Clearing user input fields.
+2024-06-04 14:34:58.814225: Clearing user input fields.
+2024-06-04 14:36:07.787565: New session created. Loaded source files.
+2024-06-04 14:36:07.792374: Initialization finished.
+2024-06-04 14:36:17.791848: Entry selected for deletion is 1 (f7287dbd2ed393abf040516b6e1a3382).
+2024-06-04 14:36:18.026474: Clearing user input fields.
+2024-06-04 14:36:25.14773: Logging user event 1e7a7812972fbb4c23fd39fb52057b71 .
+2024-06-04 14:36:25.365046: Clearing user input fields.
+2024-06-04 14:36:26.143996: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:36:31.651357: Clearing user input fields.
+2024-06-04 14:36:33.78464: Logging user event d336d28ab53879ca5ea0c24056f48c59 .
+2024-06-04 14:36:34.00132: Clearing user input fields.
+2024-06-04 14:36:34.207481: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:36:34.213118: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:37:04.351539: New session created. Loaded source files.
+2024-06-04 14:37:04.356856: Initialization finished.
+2024-06-04 14:37:04.395131: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:37:04.395736: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:37:06.308654: Clearing user input fields.
+2024-06-04 14:37:08.291397: Logging user event f0998c2098372050dc25e66686db902d .
+2024-06-04 14:37:08.397966: Clearing user input fields.
+2024-06-04 14:37:08.433376: Adding queue button for event f0998c2098372050dc25e66686db902d
+2024-06-04 14:37:08.434204: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:37:08.434738: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:37:24.109935: Logging user event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3 .
+2024-06-04 14:37:24.221434: Clearing user input fields.
+2024-06-04 14:37:24.559827: Adding queue button for event f0998c2098372050dc25e66686db902d
+2024-06-04 14:37:24.561379: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:37:24.562605: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:37:24.564012: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:37:25.261525: Clearing user input fields.
+2024-06-04 14:37:26.510763: Clearing user input fields.
+2024-06-04 14:37:27.438819: Clearing user input fields.
+2024-06-04 14:37:31.247057: Start button for f0998c2098372050dc25e66686db902d
+2024-06-04 14:37:31.248384: Writting update to log file.
+2024-06-04 14:37:31.254562: Clearing user input fields.
+2024-06-04 14:37:31.606291: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:37:31.607742: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:37:31.609176: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:37:33.109825: ATDEPTH button for f0998c2098372050dc25e66686db902d
+2024-06-04 14:37:33.111153: Writting update to log file.
+2024-06-04 14:37:33.118046: Clearing user input fields.
+2024-06-04 14:37:33.629939: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:37:33.630726: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:37:33.631271: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:37:34.481214: Clearing user input fields.
+2024-06-04 14:37:34.653636: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:37:34.654425: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:37:34.654899: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:37:36.025481: Logging user event fd619c12156ff9725be6dfe0bd081b02 .
+2024-06-04 14:37:36.132632: Clearing user input fields.
+2024-06-04 14:37:36.660866: Adding queue button for event fd619c12156ff9725be6dfe0bd081b02
+2024-06-04 14:37:36.661796: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:37:36.662294: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:37:36.662728: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:37:47.092811: Clearing user input fields.
+2024-06-04 14:37:48.570774: Clearing user input fields.
+2024-06-04 14:37:52.469421: Clearing user input fields.
+2024-06-04 14:37:53.9893: Logging user event 2a685dd92eeda485748fec6ff51a8f00 .
+2024-06-04 14:37:54.097214: Clearing user input fields.
+2024-06-04 14:37:54.823241: Adding queue button for event fd619c12156ff9725be6dfe0bd081b02
+2024-06-04 14:37:54.824448: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:37:54.824948: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:37:54.825371: Adding queue button for event 2a685dd92eeda485748fec6ff51a8f00
+2024-06-04 14:37:54.825778: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:38:22.51127: New session created. Loaded source files.
+2024-06-04 14:38:22.516796: Initialization finished.
+2024-06-04 14:38:22.567058: Adding queue button for event fd619c12156ff9725be6dfe0bd081b02
+2024-06-04 14:38:22.567666: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:38:22.569208: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:38:22.569672: Adding queue button for event 2a685dd92eeda485748fec6ff51a8f00
+2024-06-04 14:38:22.570121: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:38:24.966634: Logging user event 056c674ce9582bf7490063c110572f25 .
+2024-06-04 14:38:26.974894: Clearing user input fields.
+2024-06-04 14:38:27.009816: Adding queue button for event fd619c12156ff9725be6dfe0bd081b02
+2024-06-04 14:38:27.010931: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:38:27.011481: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:38:27.011984: Adding queue button for event 2a685dd92eeda485748fec6ff51a8f00
+2024-06-04 14:38:27.012461: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:38:27.012877: Adding queue button for event 056c674ce9582bf7490063c110572f25
+2024-06-04 14:38:34.718427: Logging user event 999b4fc157bf9548fc10262d424bb689 .
+2024-06-04 14:38:36.731783: Clearing user input fields.
+2024-06-04 14:38:36.763069: Adding queue button for event fd619c12156ff9725be6dfe0bd081b02
+2024-06-04 14:38:36.76409: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:38:36.764617: Adding queue button for event 999b4fc157bf9548fc10262d424bb689
+2024-06-04 14:38:36.765092: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:38:36.765559: Adding queue button for event 2a685dd92eeda485748fec6ff51a8f00
+2024-06-04 14:38:36.766048: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:38:36.76655: Adding queue button for event 056c674ce9582bf7490063c110572f25
+2024-06-04 14:38:38.747667: Clearing user input fields.
+2024-06-04 14:40:20.352785: New session created. Loaded source files.
+2024-06-04 14:40:20.357812: Initialization finished.
+2024-06-04 14:40:20.400133: Adding queue button for event fd619c12156ff9725be6dfe0bd081b02
+2024-06-04 14:40:20.40073: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:40:20.40224: Adding queue button for event 999b4fc157bf9548fc10262d424bb689
+2024-06-04 14:40:20.402618: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:40:20.403168: Adding queue button for event 2a685dd92eeda485748fec6ff51a8f00
+2024-06-04 14:40:20.403712: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:40:20.404159: Adding queue button for event 056c674ce9582bf7490063c110572f25
+2024-06-04 14:40:25.494484: Logging user event df5dfc4bdc6bea3d1f1baa5b0031d8c9 .
+2024-06-04 14:40:26.502371: Clearing user input fields.
+2024-06-04 14:40:26.540841: Adding queue button for event fd619c12156ff9725be6dfe0bd081b02
+2024-06-04 14:40:26.541805: Adding queue button for event df5dfc4bdc6bea3d1f1baa5b0031d8c9
+2024-06-04 14:40:26.542293: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:40:26.54274: Adding queue button for event 999b4fc157bf9548fc10262d424bb689
+2024-06-04 14:40:26.543171: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:40:26.543611: Adding queue button for event 2a685dd92eeda485748fec6ff51a8f00
+2024-06-04 14:40:26.544034: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:40:26.544447: Adding queue button for event 056c674ce9582bf7490063c110572f25
+2024-06-04 14:40:32.323669: Clearing user input fields.
+2024-06-04 14:40:37.985387: Logging user event c64016b12becfa7ae7cac5c2b87f410b .
+2024-06-04 14:40:38.997503: Clearing user input fields.
+2024-06-04 14:40:39.035744: Adding queue button for event fd619c12156ff9725be6dfe0bd081b02
+2024-06-04 14:40:39.036674: Adding queue button for event df5dfc4bdc6bea3d1f1baa5b0031d8c9
+2024-06-04 14:40:39.037159: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:40:39.037589: Adding queue button for event c64016b12becfa7ae7cac5c2b87f410b
+2024-06-04 14:40:39.038027: Adding queue button for event 999b4fc157bf9548fc10262d424bb689
+2024-06-04 14:40:39.03844: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:40:39.038851: Adding queue button for event 2a685dd92eeda485748fec6ff51a8f00
+2024-06-04 14:40:39.03929: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:40:39.039712: Adding queue button for event 056c674ce9582bf7490063c110572f25
+2024-06-04 14:42:20.082453: New session created. Loaded source files.
+2024-06-04 14:42:20.088449: Initialization finished.
+2024-06-04 14:42:20.130648: Adding queue button for event c64016b12becfa7ae7cac5c2b87f410b
+2024-06-04 14:42:20.131211: Adding queue button for event df5dfc4bdc6bea3d1f1baa5b0031d8c9
+2024-06-04 14:42:20.133518: Adding queue button for event 999b4fc157bf9548fc10262d424bb689
+2024-06-04 14:42:20.134169: Adding queue button for event 056c674ce9582bf7490063c110572f25
+2024-06-04 14:42:20.134672: Adding queue button for event 2a685dd92eeda485748fec6ff51a8f00
+2024-06-04 14:42:20.135092: Adding queue button for event fd619c12156ff9725be6dfe0bd081b02
+2024-06-04 14:42:20.135502: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:42:20.135933: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:42:20.136327: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:42:24.734526: Start button for df5dfc4bdc6bea3d1f1baa5b0031d8c9
+2024-06-04 14:42:24.735491: Writting update to log file.
+2024-06-04 14:42:24.742193: Clearing user input fields.
+2024-06-04 14:42:25.174711: Adding queue button for event c64016b12becfa7ae7cac5c2b87f410b
+2024-06-04 14:42:25.175345: Adding queue button for event 999b4fc157bf9548fc10262d424bb689
+2024-06-04 14:42:25.175799: Adding queue button for event 056c674ce9582bf7490063c110572f25
+2024-06-04 14:42:25.17625: Adding queue button for event 2a685dd92eeda485748fec6ff51a8f00
+2024-06-04 14:42:25.176669: Adding queue button for event fd619c12156ff9725be6dfe0bd081b02
+2024-06-04 14:42:25.177099: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:42:25.177556: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:42:25.177971: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:42:28.384856: ATDEPTH button for df5dfc4bdc6bea3d1f1baa5b0031d8c9
+2024-06-04 14:42:28.386077: Writting update to log file.
+2024-06-04 14:42:28.402272: Clearing user input fields.
+2024-06-04 14:42:29.202993: Adding queue button for event c64016b12becfa7ae7cac5c2b87f410b
+2024-06-04 14:42:29.203647: Adding queue button for event 999b4fc157bf9548fc10262d424bb689
+2024-06-04 14:42:29.204105: Adding queue button for event 056c674ce9582bf7490063c110572f25
+2024-06-04 14:42:29.204571: Adding queue button for event 2a685dd92eeda485748fec6ff51a8f00
+2024-06-04 14:42:29.205019: Adding queue button for event fd619c12156ff9725be6dfe0bd081b02
+2024-06-04 14:42:29.205471: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:42:29.205907: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:42:29.206342: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:42:31.197059: Clearing user input fields.
+2024-06-04 14:42:31.229604: Adding queue button for event c64016b12becfa7ae7cac5c2b87f410b
+2024-06-04 14:42:31.230368: Adding queue button for event 999b4fc157bf9548fc10262d424bb689
+2024-06-04 14:42:31.230785: Adding queue button for event 056c674ce9582bf7490063c110572f25
+2024-06-04 14:42:31.231175: Adding queue button for event 2a685dd92eeda485748fec6ff51a8f00
+2024-06-04 14:42:31.231561: Adding queue button for event fd619c12156ff9725be6dfe0bd081b02
+2024-06-04 14:42:31.231952: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:42:31.23231: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:42:31.232688: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:42:38.238746: Start button for c64016b12becfa7ae7cac5c2b87f410b
+2024-06-04 14:42:38.239839: Writting update to log file.
+2024-06-04 14:42:38.245928: Clearing user input fields.
+2024-06-04 14:42:38.276243: Adding queue button for event 999b4fc157bf9548fc10262d424bb689
+2024-06-04 14:42:38.276735: Adding queue button for event 056c674ce9582bf7490063c110572f25
+2024-06-04 14:42:38.277126: Adding queue button for event 2a685dd92eeda485748fec6ff51a8f00
+2024-06-04 14:42:38.277509: Adding queue button for event fd619c12156ff9725be6dfe0bd081b02
+2024-06-04 14:42:38.2779: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:42:38.278276: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:42:38.278661: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:42:39.312239: ATDEPTH button for c64016b12becfa7ae7cac5c2b87f410b
+2024-06-04 14:42:39.313128: Writting update to log file.
+2024-06-04 14:42:39.317743: Clearing user input fields.
+2024-06-04 14:42:40.303516: Adding queue button for event 999b4fc157bf9548fc10262d424bb689
+2024-06-04 14:42:40.304111: Adding queue button for event 056c674ce9582bf7490063c110572f25
+2024-06-04 14:42:40.304639: Adding queue button for event 2a685dd92eeda485748fec6ff51a8f00
+2024-06-04 14:42:40.305439: Adding queue button for event fd619c12156ff9725be6dfe0bd081b02
+2024-06-04 14:42:40.306056: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:42:40.306651: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:42:40.30723: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:42:40.625493: Clearing user input fields.
+2024-06-04 14:42:41.313345: Adding queue button for event 999b4fc157bf9548fc10262d424bb689
+2024-06-04 14:42:41.314212: Adding queue button for event 056c674ce9582bf7490063c110572f25
+2024-06-04 14:42:41.314705: Adding queue button for event 2a685dd92eeda485748fec6ff51a8f00
+2024-06-04 14:42:41.315138: Adding queue button for event fd619c12156ff9725be6dfe0bd081b02
+2024-06-04 14:42:41.315594: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:42:41.316045: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:42:41.316488: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:43:01.885858: Start button for 2a685dd92eeda485748fec6ff51a8f00
+2024-06-04 14:43:01.887216: Writting update to log file.
+2024-06-04 14:43:01.893366: Clearing user input fields.
+2024-06-04 14:43:02.461541: Adding queue button for event 999b4fc157bf9548fc10262d424bb689
+2024-06-04 14:43:02.462218: Adding queue button for event 056c674ce9582bf7490063c110572f25
+2024-06-04 14:43:02.462682: Adding queue button for event fd619c12156ff9725be6dfe0bd081b02
+2024-06-04 14:43:02.46315: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:43:02.46359: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:43:02.463989: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:43:05.800495: New session created. Loaded source files.
+2024-06-04 14:43:05.80631: Initialization finished.
+2024-06-04 14:43:05.85641: Adding queue button for event 999b4fc157bf9548fc10262d424bb689
+2024-06-04 14:43:05.858613: Adding queue button for event fd619c12156ff9725be6dfe0bd081b02
+2024-06-04 14:43:05.859023: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:43:05.859393: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:43:05.859746: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:43:05.8601: Adding queue button for event 056c674ce9582bf7490063c110572f25
+2024-06-04 14:43:12.172248: ATDEPTH button for 2a685dd92eeda485748fec6ff51a8f00
+2024-06-04 14:43:12.173271: Writting update to log file.
+2024-06-04 14:43:12.179751: Clearing user input fields.
+2024-06-04 14:43:12.91311: Adding queue button for event 999b4fc157bf9548fc10262d424bb689
+2024-06-04 14:43:12.914252: Adding queue button for event fd619c12156ff9725be6dfe0bd081b02
+2024-06-04 14:43:12.91469: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:43:12.915071: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:43:12.915464: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:43:12.915845: Adding queue button for event 056c674ce9582bf7490063c110572f25
+2024-06-04 14:43:16.253585: Clearing user input fields.
+2024-06-04 14:43:16.9516: Adding queue button for event 999b4fc157bf9548fc10262d424bb689
+2024-06-04 14:43:16.952639: Adding queue button for event fd619c12156ff9725be6dfe0bd081b02
+2024-06-04 14:43:16.953168: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:43:16.953605: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:43:16.954025: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:43:16.954474: Adding queue button for event 056c674ce9582bf7490063c110572f25
+2024-06-04 14:43:19.608394: Start button for fd619c12156ff9725be6dfe0bd081b02
+2024-06-04 14:43:19.609405: Writting update to log file.
+2024-06-04 14:43:19.616506: Clearing user input fields.
+2024-06-04 14:43:19.961666: Adding queue button for event 999b4fc157bf9548fc10262d424bb689
+2024-06-04 14:43:19.963434: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:43:19.964102: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:43:19.964609: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:43:19.965168: Adding queue button for event 056c674ce9582bf7490063c110572f25
+2024-06-04 14:43:21.054256: ATDEPTH button for fd619c12156ff9725be6dfe0bd081b02
+2024-06-04 14:43:21.055421: Writting update to log file.
+2024-06-04 14:43:21.061492: Clearing user input fields.
+2024-06-04 14:43:21.983127: Adding queue button for event 999b4fc157bf9548fc10262d424bb689
+2024-06-04 14:43:21.98437: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:43:21.984852: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:43:21.985294: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:43:21.985747: Adding queue button for event 056c674ce9582bf7490063c110572f25
+2024-06-04 14:43:22.742706: Clearing user input fields.
+2024-06-04 14:43:22.994825: Adding queue button for event 999b4fc157bf9548fc10262d424bb689
+2024-06-04 14:43:22.995659: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:43:22.996139: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:43:22.996596: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:43:22.997048: Adding queue button for event 056c674ce9582bf7490063c110572f25
+2024-06-04 14:43:28.867954: Logging user event 4fe4dab3ce968637b5a8bea2f7cf0cc4 .
+2024-06-04 14:43:29.878066: Clearing user input fields.
+2024-06-04 14:43:29.919604: Adding queue button for event 999b4fc157bf9548fc10262d424bb689
+2024-06-04 14:43:29.920457: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:43:29.920937: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:43:29.921382: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:43:29.921883: Adding queue button for event 4fe4dab3ce968637b5a8bea2f7cf0cc4
+2024-06-04 14:43:29.922375: Adding queue button for event 056c674ce9582bf7490063c110572f25
+2024-06-04 14:43:48.887695: New session created. Loaded source files.
+2024-06-04 14:43:48.89333: Initialization finished.
+2024-06-04 14:43:48.942664: Adding queue button for event 4fe4dab3ce968637b5a8bea2f7cf0cc4
+2024-06-04 14:43:48.943312: Adding queue button for event 999b4fc157bf9548fc10262d424bb689
+2024-06-04 14:43:48.944907: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:43:48.945292: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:43:48.945667: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:43:48.946052: Adding queue button for event 056c674ce9582bf7490063c110572f25
+2024-06-04 14:43:52.265932: Start button for 999b4fc157bf9548fc10262d424bb689
+2024-06-04 14:43:52.267105: Writting update to log file.
+2024-06-04 14:43:52.273903: Clearing user input fields.
+2024-06-04 14:43:52.978492: Adding queue button for event 4fe4dab3ce968637b5a8bea2f7cf0cc4
+2024-06-04 14:43:52.97971: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:43:52.980223: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:43:52.980706: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:43:52.981122: Adding queue button for event 056c674ce9582bf7490063c110572f25
+2024-06-04 14:43:54.34898: ATDEPTH button for 999b4fc157bf9548fc10262d424bb689
+2024-06-04 14:43:54.350257: Writting update to log file.
+2024-06-04 14:43:54.3657: Clearing user input fields.
+2024-06-04 14:43:54.993659: Adding queue button for event 4fe4dab3ce968637b5a8bea2f7cf0cc4
+2024-06-04 14:43:54.995199: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:43:54.995711: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:43:54.996141: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:43:54.996595: Adding queue button for event 056c674ce9582bf7490063c110572f25
+2024-06-04 14:43:56.072462: Clearing user input fields.
+2024-06-04 14:43:57.020256: Adding queue button for event 4fe4dab3ce968637b5a8bea2f7cf0cc4
+2024-06-04 14:43:57.021102: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:43:57.021538: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:43:57.021945: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:43:57.022343: Adding queue button for event 056c674ce9582bf7490063c110572f25
+2024-06-04 14:47:38.685424: New session created. Loaded source files.
+2024-06-04 14:47:38.691159: Initialization finished.
+2024-06-04 14:47:38.746303: Adding queue button for event 4fe4dab3ce968637b5a8bea2f7cf0cc4
+2024-06-04 14:47:38.747076: Adding queue button for event 7fdf31e3aa1ad6c1c8fabca9abfa2cf3
+2024-06-04 14:47:38.748755: Adding queue button for event d336d28ab53879ca5ea0c24056f48c59
+2024-06-04 14:47:38.749191: Adding queue button for event 1e7a7812972fbb4c23fd39fb52057b71
+2024-06-04 14:47:38.749585: Adding queue button for event 056c674ce9582bf7490063c110572f25
+2024-06-04 14:47:42.243276: Start button for 4fe4dab3ce968637b5a8bea2f7cf0cc4
+2024-06-04 14:47:42.244271: Writting update to log file.
+2024-06-04 14:47:42.250144: Clearing user input fields.
+2024-06-04 14:48:59.173129: Entry selected for review is  1 .
+2024-06-04 14:49:19.80995: New session created. Loaded source files.
+2024-06-04 14:49:19.814852: Initialization finished.
+2024-06-04 14:49:22.103882: Entry selected for review is  1 .
+2024-06-04 14:49:38.481491: New session created. Loaded source files.
+2024-06-04 14:49:38.48763: Initialization finished.
+2024-06-04 14:49:40.688401: Entry selected for review is  2 .
+2024-06-04 14:49:41.414654: Searching for the history of event 80b3ab364ed6a4806540093ec151a83e .
+2024-06-04 14:50:16.114307: New session created. Loaded source files.
+2024-06-04 14:50:16.119897: Initialization finished.
+2024-06-04 14:50:19.968876: Entry selected for review is  1 .
+2024-06-04 14:50:20.692801: Searching for the history of event 872aad1d6d1e668b748f92b8c3ce02e2 .
+2024-06-04 14:50:33.647886: Entry selected for review is  1 .
+2024-06-04 14:50:34.402032: Searching for the history of event 872aad1d6d1e668b748f92b8c3ce02e2 .

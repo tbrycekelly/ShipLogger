@@ -18,6 +18,7 @@ server = function(input, output, session) {
 
   source('config.R')
   source('functions.R')
+
   add.log('New session created. Loaded source files.')
   init.log() # create log if doesn't exist
 
@@ -39,51 +40,18 @@ server = function(input, output, session) {
 
   clear = function() {
     tmp = parseLog()
-    id = idList()
     add.log('Clearing user input fields.')
-    updateTextInput(inputId = "start.event", value = max(as.numeric(tmp$event)) + 1)
-    updateTextInput(inputId = "start.sample", value = max(id$used) + 1)
+    updateTextInput(inputId = "event", value = max(as.numeric(tmp$event), na.rm = T) + 1)
     updateSelectInput(inputId = 'author', selected = F)
     updateSelectInput(inputId = 'instrument', selected = F)
     updateTextInput(inputId = "stn", value = "")
     updateTextInput(inputId = "cast", value = "")
-    updateTextInput(inputId = "n", value = "1")
     updateTextInput(inputId = 'entry', value = '')
   }
 
   observeEvent(
-    input$idCheck,
-    {
-      proposedID = input$event.ids
-      if (is.null(proposedID)) { # No text entered, do nothing.
-        return()
-      }
-
-      proposedID = as.numeric(strsplit(proposedID, ',')[[1]]) # Split into numbers
-      usedID = idList()
-
-      parse = parseLog()
-      row  = input$events_rows_selected
-      currentID = as.numeric(strsplit(parse$events[row], ',')[[1]])
-      usedID$used = usedID$used[!(usedID$used %in% currentID)]
-      usedID$avail = c(usedID$avail, currentID)
-
-      message('Current IDs:\t', paste(currentID, collapse = ', '))
-      message('Proposed  IDs:\t', paste(proposedID, collapse = ', '))
-      message('Used IDs: \t', paste(usedID$used, collapse = ', '))
-
-      if (any(proposedID %in% usedID$used)) {
-        updateTextInput(session, 'idCheckStatus', value = 'Duplicates')
-        return()
-      }
-
-      if (all(proposedID %in% usedID$avail)) { # All of the proposed IDs are valid AND available to be used.
-        updateTextInput(session, 'idCheckStatus', value = 'Valid')
-        return()
-      }
-
-      updateTextInput(session, 'idCheckStatus', value = 'Invalid')
-    }
+    input$exit,
+    stopApp(list(input$phase_selection, input$table_selection))
   )
 
 
@@ -97,6 +65,10 @@ server = function(input, output, session) {
             tags$head(tags$style(HTML(".shiny-split-layout > div {overflow: visible}"))),
             fluidPage(
               fluidRow(
+                splitLayout(
+                  cellWidths = c("200px", "100px"),
+                  selectInput('event.instrument', 'Instrument', instruments)
+                ),
                 splitLayout(
                   cellWidths = c("200px", "100px", "100px"),
                   cellArgs = list(style = "vertical-align: top"),
@@ -117,15 +89,6 @@ server = function(input, output, session) {
                   selectInput('event.author', 'Author', authors),
                   textInput("event.station", 'Stn', placeholder = ""),
                   textInput("event.cast", 'Cast', placeholder = "")
-                ),
-                selectInput('event.instrument', 'Instrument', instruments),
-
-                splitLayout(
-                  cellWidths = c('375px', '200px', '150px'),
-                  cellArgs = list(style = "vertical-align: middle"),
-                  textAreaInput("event.ids", "Assigned IDs", placeholder = "", height = 75, width = "354px"),
-                  actionButton('idCheck', label = 'Check Sample IDs'),
-                  textInput('idCheckStatus', '', value = 'unknown', width = '10em')
                 ),
 
                 textAreaInput("event.note", "Note", placeholder = "", height = 100, width = "354px"),
@@ -153,19 +116,46 @@ server = function(input, output, session) {
   observeEvent(
     input$start_button,
     {
-      id <- as.numeric(input$start_button)
-      message('Start button for ', id)
+      id = input$start_button
+      add.log(paste0('Start button for ', id))
       raw = log()
       parse = parseLog()
 
       i = 1
       while (i <= length(raw)) {
-        if (!is.na(raw[[i]]$id) & raw[[i]]$id == id) {
+        if (!is.na(raw[[i]]$event.id) & raw[[i]]$event.id == id) {
           raw = raw[[i]]
           raw$start.time = Sys.time()
           raw$start.lon = position()$lon
           raw$start.lat = position()$lat
           raw$status = 'STARTED'
+          add.log('Writting update to log file.')
+          write.json('log/log.json', raw)
+          clear()
+          return()
+        }
+        i = i + 1
+      }
+    }
+  )
+
+  observeEvent(
+    input$atdepth_button,
+    {
+      id = input$atdepth_button
+      add.log(paste0('ATDEPTH button for ', id))
+      raw = log()
+      parse = parseLog()
+
+      i = 1
+      while (i <= length(raw)) {
+        if (!is.na(raw[[i]]$event.id) & raw[[i]]$event.id == id) {
+          raw = raw[[i]]
+          raw$atdepth.time = Sys.time()
+          raw$atdepth.lon = position()$lon
+          raw$atdepth.lat = position()$lat
+          raw$status = 'ATDEPTH'
+          add.log('Writting update to log file.')
           write.json('log/log.json', raw)
           clear()
           return()
@@ -178,14 +168,14 @@ server = function(input, output, session) {
   observeEvent(
     input$end_button,
     {
-      id <- as.numeric(input$end_button)
+      id = input$end_button
       message('End button for ', id)
       raw = log()
       parse = parseLog()
 
       i = 1
       while (i <= length(raw)) {
-        if (!is.na(raw[[i]]$id) & raw[[i]]$id == id) {
+        if (!is.na(raw[[i]]$event.id) & raw[[i]]$event.id == id) {
           raw = raw[[i]]
           raw$end.time = Sys.time()
           raw$end.lon = position()$lon
@@ -201,49 +191,20 @@ server = function(input, output, session) {
   )
 
 
-  idList = reactive({
-    parse = parseLog()
-    used = paste(parse$event, collapse = ',', sep = ',')
-    used = as.numeric(strsplit(used, split = ',')[[1]])
-    used = used[!is.na(used)]
-
-    updateTextAreaInput(session, inputId = 'start.event', value = max(as.numeric(parse$id), na.rm = T) + 1)
-    updateTextAreaInput(session, inputId = 'start.sample', value = max(used, na.rm = T) + 1)
-
-    list(all = settings$sample.ids, used = used, avail = settings$sample.ids[!settings$sample.ids %in% used])
-  })
-
-
   observeEvent(
     input$queue,
     {
       entry = blank.event()
-      entry$id = as.numeric(input$start.event)
-      add.log(paste('Logging user event', input$start.event,'.'))
-      if (is.na(as.numeric(input$start.event))) {
-        shiny::showNotification(type = 'error', 'Geotraces Sample ID not recognized as valid (must be numeric). No event queued.')
-        return()
-      }
-
+      add.log(paste('Logging user event', entry$event.id,'.'))
+      entry$event = length(unique(parseLog()$event.id))+1
       entry$station = toupper(input$stn)
       entry$cast = input$cast
       entry$instrument = input$instrument
       entry$author = input$author
-      entry$notes = input$entry
-      entry$n = as.numeric(input$n)
-      if (!is.na(entry$n) & entry$n == 0) {
-        entry$events = NA
-      } else{
-        if (is.na(as.numeric(input$start.sample))) {
-          entry$events = max(idList()$used, na.rm = T) + 1
-          shiny::showNotification(type = 'warning', 'Events initial Geotraces ID not given (or recognized). Automatically identifying next available.')
-        } else {
-          entry$events = as.numeric(input$start.sample)
-        }
-        entry$events = paste(entry$events:(entry$events + as.numeric(input$n) - 1), collapse = ', ')
-      }
+      entry$notes = input$notes
 
       write.json(filename = 'log/log.json', entry = entry)
+      Sys.sleep(1)
       clear()
     }
   )
@@ -257,11 +218,11 @@ server = function(input, output, session) {
       raw = log()
       parse = parseLog()
       row  = input$events_rows_selected
-      id = parse$id[row]
+      id = parse$event.id[row]
       message('Searching for ', id)
       i = 1
       while(i <= length(raw)) {
-        if (raw[[i]]$id == id) {
+        if (raw[[i]]$event.id == id) {
           entry = raw[[i]]
 
           entry = update.conpare(entry, 'start.time', 'event.time.start')
@@ -270,7 +231,6 @@ server = function(input, output, session) {
           entry = update.conpare(entry, 'end.time', 'event.time.end')
           entry = update.conpare(entry, 'end.lon', 'event.lon.end')
           entry = update.conpare(entry, 'end.lat', 'event.lat.end')
-          entry = update.conpare(entry, 'events', 'event.ids')
           entry = update.conpare(entry, 'author', 'event.author')
           entry = update.conpare(entry, 'station', 'event.station')
           entry = update.conpare(entry, 'cast', 'event.cast')
@@ -289,7 +249,7 @@ server = function(input, output, session) {
   update.conpare = function(entry, name, input.name) {
     message('Comparing ', name)
     if (is.na(entry[[name]]) | (entry[[name]] != input[[input.name]])) {
-      add.log(message = paste('Changed', name, 'in', entry$id, 'from', entry[[name]], 'to', input[[input.name]]))
+      add.log(message = paste('Changed', name, 'in', entry$event.id, 'from', entry[[name]], 'to', input[[input.name]]))
       entry[[name]] = input[[input.name]]
     }
     entry
@@ -310,14 +270,11 @@ server = function(input, output, session) {
         updateTextInput(session, "event.time.end", value = tmp$end.time[input$events_rows_selected])
         updateTextInput(session, "event.lon.end", value = tmp$end.lon[input$events_rows_selected])
         updateTextInput(session, "event.lat.end", value = tmp$end.lat[input$events_rows_selected])
-
-        updateTextAreaInput(session, "event.ids", value = tmp$events[input$events_rows_selected])
-
         updateSelectInput(session, "event.author", selected = tmp$author[input$events_rows_selected])
         updateTextInput(session, "event.station", value = tmp$station[input$events_rows_selected])
         updateTextInput(session, "event.cast", value = tmp$cast[input$events_rows_selected])
-        updateTextInput(session, 'event.n', value = tmp$n[input$events_rows_selected])
         updateSelectInput(session, "event.instrument", selected = tmp$instrument[input$events_rows_selected])
+        updateTextInput(session, "event.event", value = tmp$event[input$events_rows_selected])
 
         updateTextAreaInput(session, "event.note", value = tmp$notes[input$events_rows_selected])
       }
@@ -331,9 +288,9 @@ server = function(input, output, session) {
       if (length(row) == 1) {
         raw = log()
         parse = parseLog()
-        add.log(paste0('Entry selected for deletion is ', row, ' (', parse$id[row],').'))
+        add.log(paste0('Entry selected for deletion is ', row, ' (', parse$event.id[row],').'))
         for (i in 1:length(raw)) {
-          if (parse$id[row] == raw[[i]]$id) {
+          if (parse$event.id[row] == raw[[i]]$event.id) {
             raw = raw[[i]]
             raw$status = 'DELETED'
             write.json('log/log.json', raw)
@@ -446,36 +403,49 @@ server = function(input, output, session) {
 
       tmp$button = ''
       for (i in 1:nrow(tmp)) {
-        if (tmp$status[i] == 'QUEUED') {
+        if (tmp$status[i] == 'QUEUED') { ## Add start button
+          add.log(paste0('Adding queue button for event ', tmp$event.id[i]))
           tmp$button[i] = shinyInput(FUN = actionButton,
-                                     id = paste0(tmp$id[i]),
+                                     id = tmp$event.id[i],
                                      label = "Start",
                                      onclick = 'Shiny.setInputValue(\"start_button\", this.id, {priority: \"event\"})',
                                      style="color: #fff; background-color: #33aa77; border-color: #2e6da4"
                                      )
-        } else if (tmp$status[i] == 'STARTED') {
+        } else if (tmp$status[i] == 'ATDEPTH') { ## Add STOP button
           tmp$button[i] = shinyInput(FUN = actionButton,
-                                     id = paste0(tmp$id[i]),
+                                     id = tmp$event.id[i],
                                      label = "End",
                                      onclick = 'Shiny.setInputValue(\"end_button\", this.id, {priority: \"event\"})',
                                      style="color: #fff; background-color: #d37a57; border-color: #ee0000"
                                      )
+        } else if (tmp$status[i] == 'STARTED') { ## Add ATDEPTH button
+          tmp$button[i] = shinyInput(FUN = actionButton,
+                                     id = tmp$event.id[i],
+                                     label = "ATDEPTH",
+                                     onclick = 'Shiny.setInputValue(\"atdepth_button\", this.id, {priority: \"event\"})',
+                                     style="color: #fff; background-color: #435aa7; border-color: #ee0000"
+          )
         }
       }
 
       nice = data.frame(Action = tmp$button,
                         Status = tmp$status,
-                        Event.ID = tmp$id,
-                        Sample.IDs = tmp$events,
+                        #Event.ID = tmp$event.id,
+                        Event = tmp$event,
                         Instrument = tmp$instrument,
                         Station = tmp$station,
                         Cast = tmp$cast,
                         Start = '',
+                        AtDepth = '',
                         End = '',
                         Author = tmp$author,
                         Notes = tmp$notes)
       k = tmp$start.time != ''
       nice$Start[k] = paste(tmp$start.time[k], '<br>Lon:', tmp$start.lon[k], '<br>Lat:', tmp$start.lat[k])
+
+      k = tmp$atdepth.time != ''
+      nice$AtDepth[k] = paste(tmp$atdepth.time[k], '<br>Lon:', tmp$atdepth.lon[k], '<br>Lat:', tmp$atdepth.lat[k])
+
       k = tmp$end.time != ''
       nice$End[k] = paste(tmp$end.time[k], '<br>Lon:', tmp$end.lon[k], '<br>Lat:', tmp$end.lat[k])
 
@@ -490,11 +460,12 @@ server = function(input, output, session) {
       tmp = parse.log(log(), T)
       tab = parseLog()
 
-      add.log(paste('Searching for the history of event', tab$id[input$events_rows_selected], '.'))
-      tmp = tmp[tab$id[input$events_rows_selected] == tmp$id,]
+      add.log(paste('Searching for the history of event', tab$event.id[input$events_rows_selected], '.'))
+      tmp = tmp[tab$event.id[input$events_rows_selected] == tmp$event.id,]
 
       nice = data.frame(Status = tmp$status,
-                        Event.ID = tmp$id,
+                        Event.ID = tmp$event.id,
+                        Event = tmp$event,
                         Station = tmp$station,
                         Cast = tmp$cast,
                         Start = '',
@@ -509,49 +480,6 @@ server = function(input, output, session) {
   })
 
 
-  output$idSummary = renderUI({
-    id = idList()
-    nex = which(id$all == max(id$used, na.rm = T))
-    if (length(nex) < 1) {nex = 1}
-    message(nex)
-    res = tagList()
-    res[[1]] = tags$text('...')
-
-    for (i in pmax(1, nex - 20):pmin(nex + 20, length(id$all))) {
-      if (id$all[i] %in% id$used) {
-        res[[length(res) + 1]] = tags$text(id$all[i], style = "color:red")
-      } else if (i == nex + 1) {
-        res[[length(res) + 1]] = tags$text(id$all[i], style = "color:green")
-      } else {
-        res[[length(res) + 1]] = tags$text(id$all[i], style = "color:gray")
-      }
-    }
-
-    res[[length(res) + 1]] = tags$text('...')
-    res
-  })
-
-  output$eventSummary = renderUI({
-    parse = parseLog()
-    parse = parse[order(parse$id),]
-
-    res = tagList()
-
-    for (i in 1:nrow(parse)) {
-      if (parse$status[i] == 'QUEUED') {
-        res[[length(res) + 1]] = tags$text(parse$id[i], style = "color:red")
-      } else if (parse$status[i] == 'STARTED') {
-        res[[length(res) + 1]] = tags$text(parse$id[i], style = "color:green")
-      } else if (parse$status[i] == 'ENDED') {
-        res[[length(res) + 1]] = tags$text(parse$id[i], style = "color:white")
-      } else {
-        res[[length(res) + 1]] = tags$text(parse$id[i], style = "color:gray")
-      }
-    }
-
-    res
-  })
-
   #### Download options:
   output$download.csv = downloadHandler(
     filename = function() {
@@ -561,8 +489,8 @@ server = function(input, output, session) {
       add.log('Preparing csv download.')
       tmp = parseLog()
       nice = data.frame(Status = tmp$status,
-                        Event.ID = tmp$id,
-                        Sample.IDs = tmp$events,
+                        Event.ID = tmp$event.id,
+                        Event = tmp$event,
                         Instrument = tmp$instrument,
                         Station = tmp$station,
                         Cast = tmp$cast,
@@ -589,8 +517,8 @@ server = function(input, output, session) {
       tmp = parseLog()
 
       nice = data.frame(Status = tmp$status,
-                        Event.ID = tmp$id,
-                        Sample.IDs = tmp$events,
+                        Event.ID = tmp$event.id,
+                        Event = tmp$event,
                         Instrument = tmp$instrument,
                         Station = tmp$station,
                         Cast = tmp$cast,

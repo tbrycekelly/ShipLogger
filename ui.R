@@ -32,23 +32,15 @@ ui = dashboardPage(
     downloadButton('download.json', label = 'JSON'),
     downloadButton('download.pos', label = 'Positions'),
     hr(),
-    h3('Event IDs'),
-    uiOutput('eventSummary'),
-    br(),
-    h3('Sample IDs'),
-    uiOutput('idSummary'),
-    hr(),
     br(),br(),
-    actionButton('about', 'About')
+    actionButton('about', 'About'),
+    actionButton("exit","Shutdown")
   ),
 
   body = dashboardBody(
     box(title = 'Entry Queuing',
         column(
           width = 6,
-          shiny::textInput('start.event', label = 'Event ID', width = '10em'),
-          shiny::textInput('start.sample', label = 'Initial Geotraces ID', width = '10em'),
-          shiny::textInput('n', label = 'N samples', width = '6em', value = 1),
           shiny::textInput("stn", label = 'Station', width = '10em'),
           shiny::textInput("cast", label = 'Cast', width = '10em'),
         ),
@@ -62,7 +54,7 @@ ui = dashboardPage(
                              label = 'Author',
                              choices = authors,
                              width = '35em'),
-          textInput("entry", label = 'Entry Comments',
+          textInput("notes", label = 'Entry Comments',
                     width = '35em'),
 
           actionButton('queue', label = 'Queue Event'),
