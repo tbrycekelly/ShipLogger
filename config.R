@@ -15,29 +15,34 @@ settings = list(
 )
 
 
-instruments = c('Aerosol Sampler (Buck)',
-                'Aerosol Sampler (Gao)',
-                'Beryllium-7',
-                'GEOTRACES Carousel',
-                'Sea Ice',
-                'McLane Pump',
-                'Mono-Corer',
-                'Multi-Corer',
-                'ODF Rosette (Reg Cast)',
-                'Other: include note',
-                'ODF Rosette (Pigment/Ra/234Th Cast)',
-                'Rain Sampler',
-                'Surface Ra Pump',
-                'Surface TM (Small Boat)',
-                'Surface TM (Fish)',
-                'Underway System')
-instruments = instruments[order(instruments)]
+color = list(
+  'Deploy' = list(text = '#ddd', bkg = '#224422'),
+  'Recover' = list(text = '#ddd', bkg = '#000'),
+  'AtDepth' = list(text = '#ddd', bkg = '#000'),
+  'Start' = list(text = '#ddd', bkg = '#000'),
+  'End' = list(text = '#ddd', bkg = '#000'),
+  'Collected' = list(text = '#ddd', bkg = '#000')
+)
+
+instruments = list(
+  'CTD' = c('Deploy', 'Recover'),
+  'Bongo' = c('Deploy', 'AtDepth', 'Recover'),
+  'Multinet' = c('Deploy', 'AtDepth', 'Recover'),
+  'Mooring Deployment' = c('Start', 'End'),
+  'Mooring Recovery' = c('Start', 'End'),
+  'Underway Sample' = c('Collected'),
+  'TM Fish' = c('Start', 'End'),
+  'TM CTD' = c('Deploy', 'Recover'),
+  'CTD (prod)' = c('Deploy', 'Recover'),
+  'Other (see note)' = c()
+)
+instruments = instruments[order(names(instruments))]
 
 authors = c(
   '',
-  'Person1',
-  'Person2',
-  'Person3'
+  'Thomas Kelly <tbkelly@alaska.edu>',
+  'Person2 <other@email.com>',
+  'Pet Shrimp <pelagiclyfe@gmail.com>'
 )
 
 authors = authors[order(authors)]

@@ -21,104 +21,136 @@ shinyInput <- function(FUN, id, ...) {
   }, character(1))
 }
 
-init.log = function(path = 'log/log.json') {
-  if (!file.exists('log/log.json')) {
-    tmp = as.list(blank.event())
-    tmp$event = 0
-    tmp$instrument = 'System'
-    tmp$status = 'ENDED'
-    tmp$notes = 'Initialized ShipLogger.'
+shinyInput = function(FUN, id, ...) {
 
-    writeLines(jsonlite::toJSON(tmp), 'log/log.json')
-  }
+  # for each of n, create a new input using the FUN function and convert
+  # to a character
+  vapply(id, function(i){
+    as.character(FUN(i, ...))
+  }, character(1))
+
 }
 
-blank.event = function(n = 1) {
-
-  data.frame(
-    event.id  = sapply(runif(n), digest::digest),
-    event = NA,
-    status = 'QUEUED',
-    start.time = '',
-    start.lon = '',
-    start.lat = '',
-    atdepth.time = '',
-    atdepth.lon = '',
-    atdepth.lat = '',
-    end.time = '',
-    end.lon = '',
-    end.lat = '',
-    station = '',
-    cast = '',
-    instrument = '',
-    author = '',
-    notes = ''
+#Label mandatory fields
+labelMandatory = function(label) {
+  tagList(
+    label,
+    span("*", class = "mandatory_star")
   )
 }
 
+appCSS = ".mandatory_star { color: red; }"
 
 
-## Take log entry message and write it to JSON log file.
-write.json = function(filename, entry) {
-  if (settings$demo.mode) {
-    return()
+initRecord = function(path = 'log/log.rds') {
+  if (!file.exists(path)) {
+    tmp = blank.event()
+    tmp[[1]]$event = 0
+    tmp[[1]]$instrument = 'System'
+    tmp[[1]]$status = 'ENDED'
+    tmp[[1]]$notes = 'Initialized ShipLogger.'
+
+    saveRDS(tmp, path)
   }
-  entry = as.list(entry)
-
-  dat = jsonlite::toJSON(entry)
-
-  file.copy(from = filename, to = paste0(filename, ' ', gsub(':', '', Sys.time()), '.old'))
-
-  # Write entry.
-  f = file(description = filename, open = 'a')
-  writeLines(dat, con = f)
-  close(f)
-
-  shiny::showNotification(ui = 'Event Logged', duration = 5, type = 'message')
 }
 
 
+blank.event = function(n = 1) {
+  tmp = list()
+  for (i in 1:n) {
+    id = digest::digest(runif(1))
+    tmp[[id]] = list(
+      id = id,
+      instrument = '',
+      author = '',
+      station = '',
+      cast = '',
+      status = 'Init',
+      events = list(
+        INIT = list(
+          status = 'INIT',
+          time = Sys.time(),
+          longitude = NA,
+          latitude = NA)
+      ),
+      depth = NA,
+      notes = ''
+    )
+  }
+
+  tmp
+}
 
 
-## Parse json log entries into data.frame
-parse.log = function(json, all = F) {
-  log = blank.event(length(json))
+addLog = function(message) {
+  print(message)
+}
 
-  for (i in 1:length(json)) {
-    for (n in names(json[[i]])) {
-      if (n %in% names(log) & length(json[[i]][[n]]) == 1) {
-        log[i,n] = json[[i]][[n]]
+
+## Take log entry message and write it to JSON log file.
+appendRecord = function(entry, path = 'log/log.rds') {
+  newpath = paste0(path, ' ', gsub(':', '', Sys.time()), '.old')
+  if (file.copy(from = path, to = newpath)) {
+    tmp = readRDS(newpath)
+    tmp[[entry$id]] = entry
+    saveRDS(tmp, path)
+
+    shiny::showNotification(ui = 'Event Logged', duration = 5, type = 'message')
+  } else {
+    shiny::showNotification(ui = 'Could not create log backup!', duration = 5, type = 'error')
+  }
+}
+
+
+flattenLog = function(record) {
+
+  count = 0
+  for (i in 1:length(record)) {
+    count = count + length(record[[i]]$events)
+  }
+
+  table = data.frame(id = rep(NA, count), instrument = NA, author = NA, station = NA, cast = NA, status = NA, time = NA, longitude = NA, latitude = NA, depth = NA, notes = NA)
+
+  for (i in 1:length(record)) {
+    if (length(record[[i]]$events) > 0) {
+      for (j in 1:length(record[[i]]$events)) {
+        table$id[count] = record[[i]]$id
+        table$instrument[count] = record[[i]]$instrument
+        table$author[count] = record[[i]]$author
+        table$station[count] = record[[i]]$station
+        table$cast[count] = record[[i]]$cast
+        table$status[count] = record[[i]]$events[[j]]$status
+        table$time[count] = record[[i]]$events[[j]]$time
+        table$longitude[count] = record[[i]]$events[[j]]$longitude
+        table$latitude[count] = record[[i]]$events[[j]]$latitude
+        table$depth[count] = record[[i]]$depth
+        table$notes[count] = record[[i]]$notes
+
+        count = count - 1
       }
     }
   }
 
+  table
+}
 
-  ## Remove edits and deletions. Then order
+
+
+## Parse json log entries into data.frame
+parseLog = function(record, all = F) {
+  tmp = flattenLog(record)
   if (!all) {
-    log = log[!duplicated(log$event.id) & !is.na(log$event.id),]
+    #tmp = tmp[!duplicated(tmp$id),] # Remove duplicated entries
+    l = unique(tmp$id[tmp$status == 'DELETED'])
+    tmp = tmp[!tmp$id %in% l,]
   }
-  log = log[order(as.numeric(log$event), decreasing = T),]
-
-  log
+  tmp
 }
 
 
-load.log = function(file = 'log/log.json') {
-  tmp = readLines(file)
-  tmp = tmp[length(tmp):1] # rev chronology
-  lapply(tmp, function(x) {jsonlite::fromJSON(x, simplifyDataFrame = F)})
-}
 
 
-add.log = function(message, file = 'log/diagnostics.log') {
-  if (settings$demo.mode) {
-    return()
-  }
-  f = file(file, open = 'a')
-  writeLines(paste0(Sys.time(), ': ', message), con = f)
-  writeLines(paste0(Sys.time(), ': ', message))
-  close(f)
-}
+### Start NMEA stuff
 
 
 recordNMEA = function(settings) {
@@ -211,26 +243,24 @@ getDemoMessage = function(settings, delay = 2) {
 
 
 
-shinyInput = function(FUN, id, ...) {
+inactivity <- "function idleTimer() {
+  var t = setTimeout(logout, 600000);
+  window.onmousemove = resetTimer; // catches mouse movements
+  window.onmousedown = resetTimer; // catches mouse movements
+  window.onclick = resetTimer;     // catches mouse clicks
+  window.onscroll = resetTimer;    // catches scrolling
+  window.onkeypress = resetTimer;  //catches keyboard actions
 
-  # for each of n, create a new input using the FUN function and convert
-  # to a character
-  vapply(id, function(i){
-    as.character(FUN(i, ...))
-  }, character(1))
+  function logout() {
+    window.location.reload();;  //close the window
+  }
 
+  function resetTimer() {
+    clearTimeout(t);
+    t = setTimeout(logout, 600000);  // time is in milliseconds (1000 is 1 second)
+  }
 }
+idleTimer();"
 
-
-
-#Label mandatory fields
-labelMandatory = function(label) {
-  tagList(
-    label,
-    span("*", class = "mandatory_star")
-  )
-}
-
-appCSS = ".mandatory_star { color: red; }"
 
 

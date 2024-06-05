@@ -27,10 +27,12 @@ ui = dashboardPage(
     h4(textOutput("age", container = span)),
     br(),
     h3('Export:'),
-    downloadButton('download.csv', label = 'CSV'),
-    downloadButton('download.xlsx', label = 'XLSX'),
-    downloadButton('download.json', label = 'JSON'),
-    downloadButton('download.pos', label = 'Positions'),
+    div(
+      downloadButton('download.csv', label = 'CSV', class = 'export'),
+      downloadButton('download.xlsx', label = 'XLSX', class = 'export'),
+      downloadButton('download.json', label = 'JSON', class = 'export'),
+      downloadButton('download.pos', label = 'Positions', class = 'export')
+    ),
     hr(),
     br(),br(),
     actionButton('about', 'About'),
@@ -38,25 +40,32 @@ ui = dashboardPage(
   ),
 
   body = dashboardBody(
-    box(title = 'Entry Queuing',
+    tags$script(inactivity),
+    box(title = 'Entry Queuing', width = 12,
         column(
-          width = 6,
+          width = 2,
           shiny::textInput("stn", label = 'Station', width = '10em'),
           shiny::textInput("cast", label = 'Cast', width = '10em'),
         ),
         column(
-          width = 6,
+          width = 4,
           shiny::selectInput("instrument",
                              label = 'Instrument',
-                             choices = instruments,
+                             choices = names(instruments),
                              width = '35em'),
           shiny::selectInput("author",
                              label = 'Author',
                              choices = authors,
-                             width = '35em'),
-          textInput("notes", label = 'Entry Comments',
-                    width = '35em'),
-
+                             width = '35em')
+        ),
+        column(
+          width = 3,
+          textAreaInput("notes", label = 'Entry Comments',
+                    width = '55em', height = '5em'),
+        ),
+        column(
+          width = 3,
+          textInput('depth', label = 'Depth (m)', width = '6em'),
           actionButton('queue', label = 'Queue Event'),
           actionButton('clear.enter', label = 'Reset')
         )
