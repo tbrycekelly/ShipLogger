@@ -8,6 +8,7 @@ library(openxlsx)
 library(shinyalert)
 library(shinydashboard)
 library(shinydashboardPlus)
+library(SimpleMapper)
 
 source('config.R')
 source('functions.R')

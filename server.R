@@ -8,6 +8,7 @@ library(openxlsx)
 library(shinyalert)
 library(shinydashboard)
 library(shinydashboardPlus)
+library(SimpleMapper)
 
 source('config.R')
 source('functions.R')
@@ -22,7 +23,7 @@ server = function(input, output, session) {
   globalID = NULL
 
   addLog('New session created. Loaded source files.')
-  initRecord() # create log if doesn't exist
+  QueuedRecord() # create log if doesn't exist
 
   getRecord = reactiveFileReader(
     intervalMillis = 1e3,
@@ -35,7 +36,7 @@ server = function(input, output, session) {
     parseLog(getRecord())
   )
 
-  addLog('Initialization finished.')
+  addLog('Queuedialization finished.')
 
   clear = function() {
     addLog('Clearing user input fields.')
@@ -151,9 +152,9 @@ server = function(input, output, session) {
       entry$author = input$author
       entry$notes = input$notes
       entry$depth = input$depth
-      entry$events$INIT$longitude = position()$lon
-      entry$events$INIT$latitude = position()$lat
-      entry$events$INIT$time = Sys.time()
+      entry$events$Queued$longitude = position()$lon
+      entry$events$Queued$latitude = position()$lat
+      entry$events$Queued$time = Sys.time()
 
       appendRecord(entry)
       clear()
@@ -179,6 +180,7 @@ server = function(input, output, session) {
     }
   )
 
+
   observeEvent(
     input$edit_button,
     {
@@ -191,6 +193,7 @@ server = function(input, output, session) {
       }
     }
   )
+
 
   observeEvent(
     input$delete_button,
@@ -221,6 +224,14 @@ server = function(input, output, session) {
     }
   )
 
+  observeEvent(
+    input$refresh,
+    {
+      shiny::showNotification(type = 'message', session = session, 'Logger Running.')
+      clear()
+    }
+  )
+
 
   position = reactiveFileReader(
     intervalMillis = 2000,
@@ -231,29 +242,10 @@ server = function(input, output, session) {
       if (abs(as.numeric(difftime(latest$time, Sys.time(), units = 'mins'))) > 1) {
         shiny::showNotification(type = 'error', session = session, 'Last position update was >1 minute ago. Check NMEA feed if problem persists.')
       }
-      tmp = strsplit(latest$sentance, split = ',')
+      tmp = parseNMEA(latest$sentance)
+      tmp$time = latest$time
 
-      time.raw = tmp[[1]][2]
-      lat.raw = tmp[[1]][3]
-      lon.raw = tmp[[1]][5]
-      north = toupper(tmp[[1]][4]) == 'N'
-      east = toupper(tmp[[1]][6]) == 'E'
-
-      lat = strsplit(lat.raw, '\\.')[[1]] ## e.g. 5057.4567
-      lon = strsplit(lon.raw, '\\.')[[1]] # e.g. 13745.5678
-
-      ##TODO
-      lat = as.numeric(substr(lat[1], 1, nchar(lat[1]) - 2)) + as.numeric(substr(lat[1], nchar(lat[1])-1, nchar(lat[1])))/60 + as.numeric(paste0('0.', lat[2]))/60
-      lon = as.numeric(substr(lon[1], 1, nchar(lon[1]) - 2)) + as.numeric(substr(lon[1], nchar(lon[1])-1, nchar(lon[1])))/60 + as.numeric(paste0('0.', lon[2]))/60
-
-      if (!north) {
-        lat = -lat
-      }
-      if (!east) {
-        lon = -lon
-      }
-
-      list(lon = lon, lat = lat, time = latest$time)
+      tmp
     }
   )
 
@@ -316,7 +308,7 @@ server = function(input, output, session) {
       for (i in 1:nrow(tmp)) {
         if (tmp$instrument[i] %in% names(instruments)) {
           if (i == min(which(tmp$id == tmp$id[i]))) { # Make button only for the latest entry for an ID.
-            currentActions = unique(tmp$status[tmp$id == tmp$id[i]]) ## List of actions that have been performed: e.g. 'Init', 'Deploy'
+            currentActions = unique(tmp$status[tmp$id == tmp$id[i]]) ## List of actions that have been performed: e.g. 'Queued', 'Deploy'
             possibleActions = which(!instruments[[tmp$instrument[i]]] %in% currentActions) ## list of actions left to be performed: e.g. 'Deploy', 'Recover'
 
             if (length(possibleActions) > 0) {
@@ -345,7 +337,7 @@ server = function(input, output, session) {
                                    label = 'See Notes',
                                    onclick = 'Shiny.setInputValue(\"button\", this.id, {priority: \"event\"})',
                                    style="color: #fff; background-color: #444; border-color: #2e6da4"
-            ), ' (', lengths(gregexpr("\\W+", tmp$notes[i])) + 1,')')
+            ), ' &#9733;')
         } else {
           tmp$notebutton[i] = shinyInput(FUN = actionButton,
                                                 id = paste0(tmp$id[i], '-0'),
@@ -366,7 +358,7 @@ server = function(input, output, session) {
                         Depth = tmp$depth,
                         Author = tmp$author,
                         Note = tmp$notebutton)
-      k = !(nice$Status == 'INIT' & nice$Action == '')
+      k = !(nice$Status == 'Queued' & nice$Action == '' & nice$Instrument != '')
       nice = nice[k,]
       nice = nice[order(tmp$time, decreasing = T),]
       DT::datatable(nice,
@@ -434,6 +426,21 @@ server = function(input, output, session) {
     }
   })
 
+
+  output$cruisemap = renderPlot(
+    {
+      invalidateLater(1e4)
+      par(plt = c(0.12,1,0.1,1))
+      nmea = read.table('log/position.csv', header = F)
+      colnames(nmea) = c('lon', 'lat')
+      map = plotBasemap(lon = nmea$lon[nrow(nmea)], lat = nmea$lat[nrow(nmea)], scale = as.numeric(input$scale), land.col = 'black', frame = F)
+      map = addLatitude(map)
+      map = addLongitude(map)
+      map = addLine(map, nmea$lon, nmea$lat)
+      map = addPoints(map, lon = nmea$lon[nrow(nmea)], lat = nmea$lat[nrow(nmea)])
+      map = addScale(map)
+    }
+  )
 
   #### Download options:
   output$download.csv = downloadHandler(

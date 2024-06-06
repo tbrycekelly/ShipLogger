@@ -26,7 +26,9 @@ ui = dashboardPage(
     h4(textOutput("lon", container = span)),
     h4(textOutput("age", container = span)),
     br(),
-    h3('Export:'),
+    plotOutput('cruisemap'),
+    sliderInput('scale', 'Map Scale (km)', min = 10, max = 500, step = 10, value = 300),
+    h3('Export Options'),
     div(
       downloadButton('download.csv', label = 'CSV', class = 'export'),
       downloadButton('download.xlsx', label = 'XLSX', class = 'export'),
@@ -35,8 +37,10 @@ ui = dashboardPage(
     ),
     hr(),
     br(),br(),
+    div(
     actionButton('about', 'About'),
     actionButton("exit","Shutdown")
+    )
   ),
 
   body = dashboardBody(
@@ -44,8 +48,8 @@ ui = dashboardPage(
     box(title = 'Entry Queuing', width = 12,
         column(
           width = 2,
-          shiny::textInput("stn", label = 'Station', width = '10em'),
-          shiny::textInput("cast", label = 'Cast', width = '10em'),
+          shiny::textInput("stn", label = 'Station ID', width = '10em'),
+          shiny::textInput("cast", label = 'Cast Number', width = '10em'),
         ),
         column(
           width = 4,
@@ -54,18 +58,18 @@ ui = dashboardPage(
                              choices = names(instruments),
                              width = '35em'),
           shiny::selectInput("author",
-                             label = 'Author',
+                             label = 'Author/Event Owner',
                              choices = authors,
                              width = '35em')
         ),
         column(
           width = 3,
           textAreaInput("notes", label = 'Entry Comments',
-                    width = '55em', height = '5em'),
+                    width = '45em', height = '5em'),
         ),
         column(
           width = 3,
-          textInput('depth', label = 'Depth (m)', width = '6em'),
+          textInput('depth', label = 'Bottom Depth (m)', width = '10em'),
           actionButton('queue', label = 'Queue Event'),
           actionButton('clear.enter', label = 'Reset')
         )

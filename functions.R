@@ -5,6 +5,37 @@ library(data.table)
 library(DT)
 library(serial)
 library(openxlsx)
+library(SimpleMapper)
+
+
+
+parseNMEA = function(str) {
+  if (nchar(str) < 30) {
+    return(list(lon = NA, lat = NA))
+  }
+  tmp = strsplit(str, split = ',')
+
+  time.raw = tmp[[1]][2]
+  lat.raw = tmp[[1]][3]
+  lon.raw = tmp[[1]][5]
+  north = toupper(tmp[[1]][4]) == 'N'
+  east = toupper(tmp[[1]][6]) == 'E'
+
+  lat = strsplit(lat.raw, '\\.')[[1]] ## e.g. 5057.4567
+  lon = strsplit(lon.raw, '\\.')[[1]] # e.g. 13745.5678
+
+  ##TODO
+  lat = as.numeric(substr(lat[1], 1, nchar(lat[1]) - 2)) + as.numeric(substr(lat[1], nchar(lat[1])-1, nchar(lat[1])))/60 + as.numeric(paste0('0.', lat[2]))/60
+  lon = as.numeric(substr(lon[1], 1, nchar(lon[1]) - 2)) + as.numeric(substr(lon[1], nchar(lon[1])-1, nchar(lon[1])))/60 + as.numeric(paste0('0.', lon[2]))/60
+
+  if (!north) {
+    lat = -lat
+  }
+  if (!east) {
+    lon = -lon
+  }
+  list(lon = lon, lat = lat)
+}
 
 
 #' Programmatically create a Shiny input
@@ -42,13 +73,13 @@ labelMandatory = function(label) {
 appCSS = ".mandatory_star { color: red; }"
 
 
-initRecord = function(path = 'log/log.rds') {
+QueuedRecord = function(path = 'log/log.rds') {
   if (!file.exists(path)) {
     tmp = blank.event()
     tmp[[1]]$event = 0
     tmp[[1]]$instrument = 'System'
     tmp[[1]]$status = 'ENDED'
-    tmp[[1]]$notes = 'Initialized ShipLogger.'
+    tmp[[1]]$notes = 'Queuedialized ShipLogger.'
 
     saveRDS(tmp, path)
   }
@@ -65,10 +96,10 @@ blank.event = function(n = 1) {
       author = '',
       station = '',
       cast = '',
-      status = 'Init',
+      status = 'Queued',
       events = list(
-        INIT = list(
-          status = 'INIT',
+        Queued = list(
+          status = 'Queued',
           time = Sys.time(),
           longitude = NA,
           latitude = NA)
@@ -135,7 +166,6 @@ flattenLog = function(record) {
 }
 
 
-
 ## Parse json log entries into data.frame
 parseLog = function(record, all = F) {
   tmp = flattenLog(record)
@@ -152,11 +182,10 @@ parseLog = function(record, all = F) {
 
 ### Start NMEA stuff
 
-
 recordNMEA = function(settings) {
 
   ## Setup connection
-  # Do this block one time to initialize & test feeds.
+  # Do this block one time to Queuedialize & test feeds.
   if (settings$nmea.type == 'serial') {
     con = serial::serialConnection(port = settings$nmea.serial.port, mode = settings$nmea.serial.mode)
     open(con)
@@ -168,8 +197,8 @@ recordNMEA = function(settings) {
 
   Sys.sleep(settings$nmea.update) # for good measure, wait 1 update period.
 
-  ## Run indefinitely
-  # Main body of the script which should just run indefinitely.
+  ## Run indefQueuedely
+  # Main body of the script which should just run indefQueuedely.
   while (T) {
     if (settings$nmea.type == 'serial') {
       raw = getSerialMessage(settings, con)
@@ -197,9 +226,18 @@ recordNMEA = function(settings) {
     tryCatch({
       saveRDS(list(time = Sys.time(), sentance = raw), 'log/last.rds')
     }, error = function(e) {
-      add.log(paste('Unable to write to last.rds. If problem persists, check that file is not locked. Error information:', e))
+      addLog(paste('Unable to write to last.rds. If problem persists, check that file is not locked. Error information:', e))
     }, warning = function(w) {
-      add.log(paste('Warning when writing to last.rds. If problem persists, check that file is not locked. Warning information:', w))
+      addLog(paste('Warning when writing to last.rds. If problem persists, check that file is not locked. Warning information:', w))
+    })
+
+    tryCatch({
+      pos = parseNMEA(raw)
+      write(c(pos$lon, pos$lat), file = 'log/position.csv', append = T)
+    }, error = function(e) {
+      addLog(paste('Unable to write to position.csv If problem persists, check that file is not locked. Error information:', e))
+    }, warning = function(w) {
+      addLog(paste('Warning when writing to position.csv If problem persists, check that file is not locked. Warning information:', w))
     })
 
     Sys.sleep(settings$nmea.update)
@@ -212,9 +250,9 @@ getSerialMessage = function(settings, con) {
   tryCatch({
     tmp = serial::read.serialConnection(con = con, n = 0)
   }, error = function(e) {
-    add.log(paste('Unable to retreive GPS feed from serial connection. Check NMEA settings if problem persists. Error information:', e), file = 'log/nmea.log')
+    addLog(paste('Unable to retreive GPS feed from serial connection. Check NMEA settings if problem persists. Error information:', e), file = 'log/nmea.log')
   }, warning = function(w) {
-    add.log(paste('Unable to retreive GPS feed from serial connection. Check NMEA settings if problem persists. Error information:', w), file = 'log/nmea.log')
+    addLog(paste('Unable to retreive GPS feed from serial connection. Check NMEA settings if problem persists. Error information:', w), file = 'log/nmea.log')
   })
 
   tmp
@@ -226,7 +264,7 @@ getTCPMessage = function(settings, con) {
   tryCatch({
     tmp = readLines(con, n = -1)
   }, error = function(e) {
-    add.log(paste('Unable to parse GPS feed from TCP connection. Check NMEA settings if problem persists.'), file = 'log/nmea.log')
+    addLog(paste('Unable to parse GPS feed from TCP connection. Check NMEA settings if problem persists.'), file = 'log/nmea.log')
   }, warning = function(w) {
     # Do nothing.
   }
@@ -237,13 +275,13 @@ getTCPMessage = function(settings, con) {
 
 
 getDemoMessage = function(settings, delay = 2) {
-  paste0('$GPGGA,123519,', 4807.038 + round(runif(1), 3), ',N,', round(01131.000 + runif(1), 3), ',E,1,08,,545.440,M,,,,*47')
+  paste0('$GPGGA,123519,', 4807.038 + round(runif(1, 0, 500), 3), ',N,', round(01131.000 + rnorm(1, 0, 100), 3), ',W,1,08,,545.440,M,,,,*47')
 }
 
 
 
 
-inactivity <- "function idleTimer() {
+inactivity = "function idleTimer() {
   var t = setTimeout(logout, 600000);
   window.onmousemove = resetTimer; // catches mouse movements
   window.onmousedown = resetTimer; // catches mouse movements

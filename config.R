@@ -21,7 +21,7 @@ color = list(
   'AtDepth' = list(text = '#ddd', bkg = '#000'),
   'Start' = list(text = '#ddd', bkg = '#000'),
   'End' = list(text = '#ddd', bkg = '#000'),
-  'Collected' = list(text = '#ddd', bkg = '#000')
+  'Collect' = list(text = '#ddd', bkg = '#000')
 )
 
 instruments = list(
@@ -30,11 +30,11 @@ instruments = list(
   'Multinet' = c('Deploy', 'AtDepth', 'Recover'),
   'Mooring Deployment' = c('Start', 'End'),
   'Mooring Recovery' = c('Start', 'End'),
-  'Underway Sample' = c('Collected'),
+  'Underway Sample' = c('Collect'),
   'TM Fish' = c('Start', 'End'),
   'TM CTD' = c('Deploy', 'Recover'),
   'CTD (prod)' = c('Deploy', 'Recover'),
-  'Other (see note)' = c()
+  'Other (see note)' = c('Collect')
 )
 instruments = instruments[order(names(instruments))]
 
