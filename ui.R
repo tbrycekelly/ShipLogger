@@ -27,7 +27,7 @@ ui = dashboardPage(
     h4(textOutput("age", container = span)),
     br(),
     plotOutput('cruisemap'),
-    sliderInput('scale', 'Map Scale (km)', min = 10, max = 500, step = 10, value = 300),
+    sliderInput('scale', 'Map Zoom', min = 0, max = 10, step = 0.5, value = 4),
     h3('Export Options'),
     div(
       downloadButton('download.csv', label = 'CSV', class = 'export'),

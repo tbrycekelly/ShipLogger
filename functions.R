@@ -25,6 +25,10 @@ parseNMEA = function(str) {
   lon = strsplit(lon.raw, '\\.')[[1]] # e.g. 13745.5678
 
   ##TODO
+  hour = as.numeric(substr(time.raw, start = 1, 2))
+  minute = as.numeric(substr(time.raw, start = 3, 4))
+  second = as.numeric(substr(time.raw, start = 5, 10))
+  time.raw = paste0(hour, ':', minute, ':', second, ' GMT')
   lat = as.numeric(substr(lat[1], 1, nchar(lat[1]) - 2)) + as.numeric(substr(lat[1], nchar(lat[1])-1, nchar(lat[1])))/60 + as.numeric(paste0('0.', lat[2]))/60
   lon = as.numeric(substr(lon[1], 1, nchar(lon[1]) - 2)) + as.numeric(substr(lon[1], nchar(lon[1])-1, nchar(lon[1])))/60 + as.numeric(paste0('0.', lon[2]))/60
 
@@ -34,7 +38,7 @@ parseNMEA = function(str) {
   if (!east) {
     lon = -lon
   }
-  list(lon = lon, lat = lat)
+  list(lon = lon, lat = lat, gpstime = time.raw)
 }
 
 
@@ -195,6 +199,9 @@ recordNMEA = function(settings) {
     ## do nothing for demo.
   }
 
+  if (!file.exists('log/position.csv')) {
+    write('lon,lat', file = 'log/position.csv')
+  }
   Sys.sleep(settings$nmea.update) # for good measure, wait 1 update period.
 
   ## Run indefQueuedely
@@ -233,7 +240,7 @@ recordNMEA = function(settings) {
 
     tryCatch({
       pos = parseNMEA(raw)
-      write(c(pos$lon, pos$lat), file = 'log/position.csv', append = T)
+      write(paste0(pos$lon, ',', pos$lat), file = 'log/position.csv', append = T)
     }, error = function(e) {
       addLog(paste('Unable to write to position.csv If problem persists, check that file is not locked. Error information:', e))
     }, warning = function(w) {

@@ -254,14 +254,14 @@ server = function(input, output, session) {
   output$currentTime = renderText(
     {
       invalidateLater(1000, session)
-      paste(format(Sys.time()), ' (system)')
+      format(Sys.time(), format = settings$datetime.format, tz = '')
     })
 
 
   output$currentTime.local = renderText(
     {
       invalidateLater(1000, session)
-      paste(format(Sys.time() + settings$local.timezone*3600), ' (local)')
+      format.POSIXct(Sys.time(), format = settings$datetime.format, tz = 'GMT')
     })
 
 
@@ -348,7 +348,7 @@ server = function(input, output, session) {
         }
       }
 
-      nice = data.frame(Time = format.POSIXct(as.POSIXct(tmp$time)),
+      nice = data.frame(SystemTime = format.POSIXct(as.POSIXct(tmp$time), format = settings$datetime.format),
                         Location = paste('Lat:', round(tmp$latitude, 4), '<br>Lon:', round(tmp$longitude, 4)),
                         Action = tmp$button,
                         Status = tmp$status,
@@ -387,7 +387,7 @@ server = function(input, output, session) {
       addLog(paste0('New value is ', input$history_cell_edit$value))
 
       if (colname == 'time') {
-        updatedRecord$events[[status]][[colname]] = as.POSIXct(input$history_cell_edit$value, format = '%Y-%m-%d %H:%M:%S')
+        updatedRecord$events[[status]][[colname]] = as.POSIXct(input$history_cell_edit$value, format = settings$datetime.format)
       } else if (colname %in% c('time', 'latitude', 'longitude')) {
         updatedRecord$events[[status]][[colname]] = input$history_cell_edit$value
       } else if (colname %in% c('station', 'cast', 'depth', 'author')) {
@@ -413,7 +413,7 @@ server = function(input, output, session) {
       addLog(paste('Searching for the history of event', id, '.'))
       tmp = tmp[tmp$id == id,]
 
-      nice = data.frame(Time = format(as.POSIXct(tmp$time)),
+      nice = data.frame(SystemTime = format.POSIXct(as.POSIXct(tmp$time), format = settings$datetime.format),
                         Latitude = round(tmp$latitude, 4),
                         Longitude = round(tmp$longitude, 4),
                         Status = tmp$status,
@@ -431,9 +431,8 @@ server = function(input, output, session) {
     {
       invalidateLater(1e4)
       par(plt = c(0.12,1,0.1,1))
-      nmea = read.table('log/position.csv', header = F)
-      colnames(nmea) = c('lon', 'lat')
-      map = plotBasemap(lon = nmea$lon[nrow(nmea)], lat = nmea$lat[nrow(nmea)], scale = as.numeric(input$scale), land.col = 'black', frame = F)
+      nmea = read.csv('log/position.csv', header = T)
+      map = plotBasemap(lon = nmea$lon[nrow(nmea)], lat = nmea$lat[nrow(nmea)], scale = 2^as.numeric(input$scale), land.col = 'black', frame = F)
       map = addLatitude(map)
       map = addLongitude(map)
       map = addLine(map, nmea$lon, nmea$lat)
@@ -450,7 +449,7 @@ server = function(input, output, session) {
     content = function (file) {
       addLog('Preparing csv download.')
       tmp = parseLog(getRecord())
-      tmp$time = format(as.POSIXct(tmp$time))
+      tmp$time = format(as.POSIXct(tmp$time), format = settings$datetime.format)
       write.csv(tmp, file)
     })
 
@@ -462,7 +461,7 @@ server = function(input, output, session) {
     content = function (file) {
       addLog('Preparing xlsx download.')
       tmp = parseLog(getRecord())
-      tmp$time = format(as.POSIXct(tmp$time))
+      tmp$time = format(as.POSIXct(tmp$time), format = settings$datetime.format)
       openxlsx::write.xlsx(tmp, file)
     })
 
