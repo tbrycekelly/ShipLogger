@@ -10,27 +10,27 @@ library(SimpleMapper)
 
 
 parseNMEA = function(str) {
-  if (nchar(str) < 30) {
+  if (sum(nchar(str)) < 30) {
     return(list(lon = NA, lat = NA))
   }
   tmp = strsplit(str, split = ',')
 
-  time.raw = tmp[[1]][2]
-  lat.raw = tmp[[1]][3]
-  lon.raw = tmp[[1]][5]
-  north = toupper(tmp[[1]][4]) == 'N'
-  east = toupper(tmp[[1]][6]) == 'E'
+  n = max(length(str) - 1, 1)
 
-  lat = strsplit(lat.raw, '\\.')[[1]] ## e.g. 5057.4567
-  lon = strsplit(lon.raw, '\\.')[[1]] # e.g. 13745.5678
+  if (nchar(str[[n]]) < 30) {
+    return(list(lon = NA, lat = NA))
+  }
 
-  ##TODO
-  hour = as.numeric(substr(time.raw, start = 1, 2))
-  minute = as.numeric(substr(time.raw, start = 3, 4))
-  second = as.numeric(substr(time.raw, start = 5, 10))
-  time.raw = paste0(hour, ':', minute, ':', second, ' GMT')
-  lat = as.numeric(substr(lat[1], 1, nchar(lat[1]) - 2)) + as.numeric(substr(lat[1], nchar(lat[1])-1, nchar(lat[1])))/60 + as.numeric(paste0('0.', lat[2]))/60
-  lon = as.numeric(substr(lon[1], 1, nchar(lon[1]) - 2)) + as.numeric(substr(lon[1], nchar(lon[1])-1, nchar(lon[1])))/60 + as.numeric(paste0('0.', lon[2]))/60
+  time.raw = tmp[[n]][2]
+  lat = tmp[[n]][3]
+  lon = tmp[[n]][5]
+  north = toupper(tmp[[n]][4]) == 'N'
+  east = toupper(tmp[[n]][6]) == 'E'
+
+  latdegree = floor(as.numeric(lat)/100)
+  lat = latdegree + (as.numeric(lat) - latdegree*100)/60
+  londegree = floor(as.numeric(lon)/100)
+  lon = londegree + (as.numeric(lon) - londegree*100)/60
 
   if (!north) {
     lat = -lat
@@ -191,7 +191,7 @@ recordNMEA = function(settings) {
   ## Setup connection
   # Do this block one time to Queuedialize & test feeds.
   if (settings$nmea.type == 'serial') {
-    con = serial::serialConnection(port = settings$nmea.serial.port, mode = settings$nmea.serial.mode)
+    con = serial::serialConnection(name = 'nmeafeed', port = settings$nmea.serial.port, mode = settings$nmea.serial.mode)
     open(con)
   } else if (settings$nmea.type == 'tcp') {
     con = socketConnection(host = settings$nmea.tcp.host, port = settings$nmea.tcp.port)
