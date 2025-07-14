@@ -16,7 +16,6 @@ source('functions.R')
 
 server = function(input, output, session) {
 
-
   source('config.R')
   source('functions.R')
 
@@ -26,7 +25,7 @@ server = function(input, output, session) {
   QueuedRecord() # create log if doesn't exist
 
   getRecord = reactiveFileReader(
-    intervalMillis = 1e3,
+    intervalMillis = settings$timeouts$logRefresh * 1e3,
     filePath = 'log/log.rds',
     readFunc = readRDS,
     session = session
@@ -54,7 +53,7 @@ server = function(input, output, session) {
   )
 
   #Form for data entry
-  entry_form <- function(button_id){
+  entry_form = function(button_id) {
     showModal(
       modalDialog(
         div(
@@ -233,34 +232,38 @@ server = function(input, output, session) {
   )
 
 
-  position = reactiveFileReader(
-    intervalMillis = 2000,
-    session = session,
-    filePath = 'log/last.rds',
-    readFunc = function(x) {
-      latest = readRDS(x)
-      if (abs(as.numeric(difftime(latest$time, Sys.time(), units = 'mins'))) > 1) {
-        shiny::showNotification(type = 'error', session = session, 'Last position update was >1 minute ago. Check NMEA feed if problem persists.')
-      }
-      tmp = parseNMEA(latest$sentance)
-      tmp$time = latest$time
+  position = reactive({
+    invalidateLater(1e3 * settings$timeouts$positionUpdate)
+    response = jsonlite::read_json('http://localhost:8000/positions?limit=10') # use Fast API
+    position = NULL
 
-      tmp
+    while(is.null(position) & length(response) > 0) {
+      if (!is.na(response[[1]]$message$latitude)) {
+        position = list(datetime = isoTime(response[[1]]$timestamp), lon = response[[1]]$message$longitude, lat = response[[1]]$message$latitude)
+      } else {
+        response = response[-1]
+      }
     }
-  )
+    if (abs(as.numeric(difftime(position$datetime, Sys.time(), units = 'mins'))) > 1) {
+      shiny::showNotification(type = 'error', session = session, 'Last position update was >1 minute ago. Check NMEA feed if problem persists.')
+    }
+
+    ## Return
+  position
+  })
 
 
   #### Outputs
   output$currentTime = renderText(
     {
-      invalidateLater(1000, session)
+      invalidateLater(settings$timeouts$uiRefresh * 1e3, session)
       format(Sys.time(), format = settings$datetime.format, tz = '')
     })
 
 
   output$currentTime.local = renderText(
     {
-      invalidateLater(1000, session)
+      invalidateLater(settings$timeouts$uiRefresh * 1e3, session)
       format.POSIXct(Sys.time(), format = settings$datetime.format, tz = 'GMT')
     })
 
@@ -270,7 +273,8 @@ server = function(input, output, session) {
       pos = position()
       s = 'E'
       if (!is.na(pos$lon) & pos$lon < 0) {
-        s = 'W'; pos$lon = -pos$lon
+        s = 'W'
+        pos$lon = -pos$lon
       }
       paste('Lon:', round(pos$lon, digits = 4), s)
     }
@@ -282,7 +286,8 @@ server = function(input, output, session) {
       pos = position()
       s = 'N'
       if (!is.na(pos$lat) & pos$lat < 0) {
-        s = 'S'; pos$lat = -pos$lat
+        s = 'S'
+        pos$lat = -pos$lat
       }
       paste('Lat:', round(pos$lat, digits = 4), s)
     }
@@ -290,9 +295,9 @@ server = function(input, output, session) {
 
   output$age = renderText(
     {
-      invalidateLater(1000)
+      invalidateLater(settings$timeouts$uiRefresh * 1e3)
       pos = position()
-      delta = abs(as.numeric(difftime(Sys.time(), pos$time, units = 'secs')))
+      delta = abs(as.numeric(difftime(Sys.time(), pos$datetime, units = 'secs')))
       paste('Fix Age:', round(delta), 'seconds.')
     }
   )
@@ -429,14 +434,31 @@ server = function(input, output, session) {
 
   output$cruisemap = renderPlot(
     {
-      invalidateLater(1e4)
+      invalidateLater(settings$timeouts$mapRefresh * 1e3)
+
+      ## API Query
+      earliestTime = isoTime(Sys.time() - 86400 * as.numeric(input$days), rev = T)
+      response = jsonlite::read_json(paste0('http://localhost:8000/positions?limit=100000&by=120&since=', earliestTime))
+      response = c(response, jsonlite::read_json(paste0('http://localhost:8000/positions?limit=360&by=10&since=', earliestTime)))
+      nmea = data.frame(datetime = NA, lon = rep(NA, length(response)), lat = NA)
+      for (i in 1:length(response)) {
+        nmea$datetime[i] = response[[i]]$timestamp
+        nmea$lon[i] = response[[i]]$message$longitude
+        nmea$lat[i] = response[[i]]$message$latitude
+      }
+      nmea = nmea[!is.na(nmea$lon),]
+      nmea = nmea[order(nmea$datetime, decreasing = T),]
+
       par(plt = c(0.12,1,0.1,1))
-      nmea = read.csv('log/position.csv', header = T)
-      map = plotBasemap(lon = nmea$lon[nrow(nmea)], lat = nmea$lat[nrow(nmea)], scale = 2^as.numeric(input$scale), land.col = 'black', frame = F)
+      map = plotBasemap(lon = nmea$lon[1],
+                        lat = nmea$lat[1],
+                        scale = 3^as.numeric(input$scale),
+                        land.col = 'black',
+                        frame = F)
       map = addLatitude(map)
       map = addLongitude(map)
       map = addLine(map, nmea$lon, nmea$lat)
-      map = addPoints(map, lon = nmea$lon[nrow(nmea)], lat = nmea$lat[nrow(nmea)])
+      map = addPoints(map, lon = nmea$lon[1], lat = nmea$lat[1])
       map = addScale(map)
     }
   )
@@ -479,14 +501,11 @@ server = function(input, output, session) {
 
   output$download.pos = downloadHandler(
     filename = function() {
-      paste0('ShipLogger Position Record ', gsub(':', '', format(Sys.time())), '.xlsx')
+      paste0('ShipLogger Position Record ', gsub(':', '', format(Sys.time())), '.json')
     },
     content = function (file) {
       addLog('Preparing Positions download.')
-      tmp = read.csv('log/nmea.csv', header = F, sep = ';')
-      colnames(tmp) = c('SystemTime', 'Sentence')
-      if (!settings$demo.mode) {
-        openxlsx::write.xlsx(tmp, file)
-      }
+      response = jsonlite::read_json('http://localhost:8000/positions?by=60')
+      write(response, file)
     })
 }

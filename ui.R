@@ -28,6 +28,7 @@ ui = dashboardPage(
     br(),
     plotOutput('cruisemap'),
     sliderInput('scale', 'Map Zoom', min = 0, max = 10, step = 0.5, value = 4),
+    sliderInput('days', 'Map Duration (days)', min = 1, max = 60, step = 1, value = 60),
     h3('Export Options'),
     div(
       downloadButton('download.csv', label = 'CSV', class = 'export'),

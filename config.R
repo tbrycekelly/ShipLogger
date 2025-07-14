@@ -4,14 +4,17 @@
 # Computer should be in UTC, because that is the only responsible thing to do.
 
 settings = list(
-  nmea.type = 'demo', # Options: 'serial' or 'tcp' or 'demo'
-  nmea.tcp.host = "127.0.0.1",
-  nmea.tcp.port = 1000,
-  nmea.serial.port = "com10",
-  nmea.serial.mode = "9600,n,8,1", # Set baud rate here, typically either 9600 or 4600
-  nmea.update = 5, # [seconds] 5 to 10 works well.
   datetime.format = '%Y-%m-%d  %H:%M:%S %Z',
-  demo.mode = F
+  timeouts = list(
+    logRefresh = 2, #sec
+    pageRefresh = 600, #sec
+    positionUpdate = 2, #sec
+    uiRefresh = 1, #sec
+    mapRefresh = 60 #sc
+  ),
+  counters = list(
+    positionCounter = 10
+  )
 )
 
 

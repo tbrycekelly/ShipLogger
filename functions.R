@@ -8,40 +8,6 @@ library(openxlsx)
 library(SimpleMapper)
 
 
-
-parseNMEA = function(str) {
-  if (sum(nchar(str)) < 30) {
-    return(list(lon = NA, lat = NA))
-  }
-  tmp = strsplit(str, split = ',')
-
-  n = max(length(str) - 1, 1)
-
-  if (nchar(str[[n]]) < 30) {
-    return(list(lon = NA, lat = NA))
-  }
-
-  time.raw = tmp[[n]][2]
-  lat = tmp[[n]][3]
-  lon = tmp[[n]][5]
-  north = toupper(tmp[[n]][4]) == 'N'
-  east = toupper(tmp[[n]][6]) == 'E'
-
-  latdegree = floor(as.numeric(lat)/100)
-  lat = latdegree + (as.numeric(lat) - latdegree*100)/60
-  londegree = floor(as.numeric(lon)/100)
-  lon = londegree + (as.numeric(lon) - londegree*100)/60
-
-  if (!north) {
-    lat = -lat
-  }
-  if (!east) {
-    lon = -lon
-  }
-  list(lon = lon, lat = lat, gpstime = time.raw)
-}
-
-
 #' Programmatically create a Shiny input
 #'
 #' @param FUN function to create the input
@@ -182,112 +148,6 @@ parseLog = function(record, all = F) {
 }
 
 
-
-
-### Start NMEA stuff
-
-recordNMEA = function(settings) {
-
-  ## Setup connection
-  # Do this block one time to Queuedialize & test feeds.
-  if (settings$nmea.type == 'serial') {
-    con = serial::serialConnection(name = 'nmeafeed', port = settings$nmea.serial.port, mode = settings$nmea.serial.mode)
-    open(con)
-  } else if (settings$nmea.type == 'tcp') {
-    con = socketConnection(host = settings$nmea.tcp.host, port = settings$nmea.tcp.port)
-  } else {
-    ## do nothing for demo.
-  }
-
-  if (!file.exists('log/position.csv')) {
-    write('lon,lat', file = 'log/position.csv')
-  }
-  Sys.sleep(settings$nmea.update) # for good measure, wait 1 update period.
-
-  ## Run indefQueuedely
-  # Main body of the script which should just run indefQueuedely.
-  while (T) {
-    if (settings$nmea.type == 'serial') {
-      raw = getSerialMessage(settings, con)
-    } else if (settings$nmea.type == 'tcp') {
-      raw = getTCPMessage(settings, con)
-    } else {
-      raw = getDemoMessage(settings)
-    }
-
-    raw = strsplit(raw, '\\$')[[1]]
-
-    ## Archive and start new lof
-    if (file.exists('log/nmea.csv')) {
-      if (file.size('log/nmea.csv') > 2e7) {
-        file.rename('log/nmea.csv', paste0('log/nmea ', gsub(':', '', Sys.time()), '.csv'))
-      }
-    }
-
-    f = file('log/nmea.csv', open = 'a')
-    writeLines(paste0(Sys.time(), '; ', raw), con = f)
-    writeLines(paste0(Sys.time(), '\t', raw))
-    close(f)
-    raw = raw[grepl('GGA', toupper(raw))] # Filter for positions
-
-    tryCatch({
-      saveRDS(list(time = Sys.time(), sentance = raw), 'log/last.rds')
-    }, error = function(e) {
-      addLog(paste('Unable to write to last.rds. If problem persists, check that file is not locked. Error information:', e))
-    }, warning = function(w) {
-      addLog(paste('Warning when writing to last.rds. If problem persists, check that file is not locked. Warning information:', w))
-    })
-
-    tryCatch({
-      pos = parseNMEA(raw)
-      write(paste0(pos$lon, ',', pos$lat), file = 'log/position.csv', append = T)
-    }, error = function(e) {
-      addLog(paste('Unable to write to position.csv If problem persists, check that file is not locked. Error information:', e))
-    }, warning = function(w) {
-      addLog(paste('Warning when writing to position.csv If problem persists, check that file is not locked. Warning information:', w))
-    })
-
-    Sys.sleep(settings$nmea.update)
-  }
-}
-
-
-getSerialMessage = function(settings, con) {
-  tmp = c()
-  tryCatch({
-    tmp = serial::read.serialConnection(con = con, n = 0)
-  }, error = function(e) {
-    addLog(paste('Unable to retreive GPS feed from serial connection. Check NMEA settings if problem persists. Error information:', e), file = 'log/nmea.log')
-  }, warning = function(w) {
-    addLog(paste('Unable to retreive GPS feed from serial connection. Check NMEA settings if problem persists. Error information:', w), file = 'log/nmea.log')
-  })
-
-  tmp
-}
-
-
-getTCPMessage = function(settings, con) {
-  tmp = c()
-  tryCatch({
-    tmp = readLines(con, n = -1)
-  }, error = function(e) {
-    addLog(paste('Unable to parse GPS feed from TCP connection. Check NMEA settings if problem persists.'), file = 'log/nmea.log')
-  }, warning = function(w) {
-    # Do nothing.
-  }
-  )
-
-  tmp
-}
-
-
-getDemoMessage = function(settings, delay = 2) {
-  paste0('$GPGGA,123519,', 4807.038 + round(runif(1, 0, 500), 3), ',N,', round(01131.000 + rnorm(1, 0, 100), 3), ',W,1,08,,545.440,M,,,,*47')
-}
-
-
-
-
 inactivity = "function idleTimer() {
   var t = setTimeout(logout, 600000);
   window.onmousemove = resetTimer; // catches mouse movements
@@ -307,5 +167,14 @@ inactivity = "function idleTimer() {
 }
 idleTimer();"
 
+
+isoTime = function(x, rev = F) {
+
+  if (rev) {
+    return(format(x, format = "%Y-%m-%dT%H:%M:%OS", tz = 'UTC'))
+  }
+
+  as.POSIXct(x, format = "%Y-%m-%dT%H:%M:%OS", tz = 'UTC')
+}
 
 
