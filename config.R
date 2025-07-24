@@ -8,36 +8,44 @@ settings = list(
   timeouts = list(
     logRefresh = 2, #sec
     pageRefresh = 600, #sec
-    positionUpdate = 2, #sec
+    positionUpdate = 5, #sec
     uiRefresh = 1, #sec
     mapRefresh = 60 #sc
   ),
   counters = list(
     positionCounter = 10
-  )
+  ),
+  drawIsobath = TRUE,
+  databaseFile = 'log/events.db'
 )
 
 
-color = list(
-  'Deploy' = list(text = '#ddd', bkg = '#224422'),
-  'Recover' = list(text = '#ddd', bkg = '#000'),
-  'AtDepth' = list(text = '#ddd', bkg = '#000'),
-  'Start' = list(text = '#ddd', bkg = '#000'),
-  'End' = list(text = '#ddd', bkg = '#000'),
-  'Collect' = list(text = '#ddd', bkg = '#000')
+buttons = list(
+  'Deploy' = list(text = '#ddd', bkg = '#224422', terminal = F, once = T),
+  'Recover' = list(text = '#ddd', bkg = '#000', terminal = T, once = T),
+  'AtDepth' = list(text = '#ddd', bkg = '#000', terminal = F, once = T),
+  'Start' = list(text = '#ddd', bkg = '#000', terminal = F, once = T),
+  'End' = list(text = '#ddd', bkg = '#000', terminal = T, once = T),
+  'Collect' = list(text = '#ddd', bkg = '#000', terminal = F, once = T),
+  'Abort' = list(text = '#ddd', bkg = '#a00', terminal = T, once = T),
+  'Note' = list(text = '#ddd', bkg = '#000', terminal = F),
+  'Annotate' = list(text = '#ddd', bkg = '#000', terminal = F, once = F)
 )
 
 instruments = list(
-  'CTD' = c('Deploy', 'Recover'),
-  'Bongo' = c('Deploy', 'AtDepth', 'Recover'),
-  'Multinet' = c('Deploy', 'AtDepth', 'Recover'),
-  'Mooring Deployment' = c('Start', 'End'),
-  'Mooring Recovery' = c('Start', 'End'),
-  'Underway Sample' = c('Collect'),
-  'TM Fish' = c('Start', 'End'),
-  'TM CTD' = c('Deploy', 'Recover'),
-  'CTD (prod)' = c('Deploy', 'Recover'),
-  'Other (see note)' = c('Collect')
+  'CTD' = c('Deploy', 'Recover', 'Abort'),
+  'Bongo' = c('Deploy', 'AtDepth', 'Recover', 'Abort'),
+  'Multinet' = c('Deploy', 'AtDepth', 'Recover', 'Abort'),
+  'Mooring Deployment' = c('Start', 'End', 'Abort'),
+  'Mooring Recovery' = c('Start', 'End', 'Abort'),
+  'Underway Sample' = c('Collect', 'End', 'Abort'),
+  'TM Fish' = c('Start', 'End', 'Abort'),
+  'TM CTD' = c('Deploy', 'Recover', 'Abort'),
+  'CTD (prod)' = c('Deploy', 'Recover', 'Abort'),
+  'Other (see note)' = c('Collect', 'End', 'Abort'),
+  'Cruise Note' = c(),
+  'Particle Interceptor Trap' = c('Deploy', 'Recover', 'Abort'),
+  'ROTV' = c('Deploy', 'Annotate', 'Recover', 'Abort')
 )
 instruments = instruments[order(names(instruments))]
 

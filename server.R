@@ -3,12 +3,17 @@ library(shinyWidgets)
 library(jsonlite)
 library(data.table)
 library(DT)
-library(serial)
 library(openxlsx)
 library(shinyalert)
 library(shinydashboard)
 library(shinydashboardPlus)
-library(SimpleMapper)
+library(ulid) # For unique IDs
+library(DBI)
+library(RSQLite)
+library(shinycssloaders)
+
+library(SimpleMapper)# For mapping: devtools::install_github('tbrycekelly/SimpleMapper')
+library(SimpleBathy) # For bathymetric data: devtools::install_github('tbrycekelly/SimpleBathy')
 
 source('config.R')
 source('functions.R')
@@ -20,22 +25,13 @@ server = function(input, output, session) {
   source('functions.R')
 
   globalID = NULL
+  selected_id = reactiveVal(NULL)
 
   addLog('New session created. Loaded source files.')
-  QueuedRecord() # create log if doesn't exist
+  initShiplogger() # create log if doesn't exist
 
-  getRecord = reactiveFileReader(
-    intervalMillis = settings$timeouts$logRefresh * 1e3,
-    filePath = 'log/log.rds',
-    readFunc = readRDS,
-    session = session
-    )
-
-  currentRecord = reactive(
-    parseLog(getRecord())
-  )
-
-  addLog('Queuedialization finished.')
+  Record = reactiveFileReader(intervalMillis = 1e3, session = session, filePath = settings$databaseFile,
+                              readFunc = function(x) {readRecord()})
 
   clear = function() {
     addLog('Clearing user input fields.')
@@ -96,123 +92,28 @@ server = function(input, output, session) {
     }
   )
 
-  ## Updates the record with an updated entry based on button press
-  observeEvent(
-    input$button,
-    {
-      id = strsplit(input$button, '-')[[1]]
-      recordID = id[1]
-      actionID = id[2]
-      record = getRecord()
-
-      if (actionID == '0') {
-        addLog(paste0('User hit note button for ', recordID))
-        addLog(paste0('Updating note filed to ', record[[recordID]]$notes))
-        globalID <<- recordID
-        note_form("note_submit")
-        updateTextAreaInput(session = session, inputId = 'newnote', value = record[[recordID]]$notes)
-
-      } else {
-        addLog(paste0('User hit button for ', recordID))
-
-        k = which(recordID == names(record))
-        if (length(k) != 1) { ## Sanity check
-          print('Bad')
-          stop()
-        }
-
-        ## Determine the action
-        if (record[[recordID]]$instrument %in% names(instruments)) {
-          currentActions = instruments[[record[[recordID]]$instrument]]
-          action = currentActions[as.numeric(actionID)]
-
-          updatedEntry = record[[recordID]] ## Copy entry
-          pos = position()
-          updatedEntry$events[[action]] = list(status = action,
-                                                time = Sys.time(),
-                                                longitude = pos$lon,
-                                                latitude = pos$lat)
-          appendRecord(updatedEntry)
-          clear()
-        }
-      }
-    }
-  )
-
   ## Creats a new entry in the record
   observeEvent(
     input$queue,
     {
-      entry = blank.event()[[1]]
-      addLog(paste('Logging user event', entry$id,'.'))
+      entry = eventTemplate()
       entry$station = toupper(input$stn)
       entry$cast = input$cast
       entry$instrument = input$instrument
       entry$author = input$author
       entry$notes = input$notes
-      entry$depth = input$depth
-      entry$events$Queued$longitude = position()$lon
-      entry$events$Queued$latitude = position()$lat
-      entry$events$Queued$time = Sys.time()
+      entry$longitude = position()$lon
+      entry$latitude = position()$lat
+      entry$datetime = Sys.time()
+      entry$event_id = ulid()
+      entry$bottom_depth = as.numeric(input$depthBottom)
+      entry$maximum_depth = as.numeric(input$depthMaximum)
 
-      appendRecord(entry)
+      addLog(paste0('Logging user event ', entry$group_id,'.'))
+      updateRecord(entry)
       clear()
     }
   )
-
-
-  observeEvent(
-    input$note_submit,
-    priority = 20,
-    {
-      addLog(paste0('Saving note.'))
-      record = getRecord()
-
-      id = input$note_submit
-      id = globalID
-      addLog(paste0('Note for ', id))
-
-      updatedRecord = record[[id]]
-      updatedRecord$notes = input$newnote
-      appendRecord(updatedRecord)
-      removeModal()
-    }
-  )
-
-
-  observeEvent(
-    input$edit_button,
-    {
-      tmp = parseLog(getRecord())
-
-      row  = input$events_rows_selected
-      addLog(paste('Entry selected for review is ', row, '.'))
-      if (length(row) > 0) {
-        entry_form("submit_edit")
-      }
-    }
-  )
-
-
-  observeEvent(
-    input$delete_button,
-    {
-      row  = input$events_rows_selected
-      if (length(row) == 1) {
-        displayed = currentRecord()
-        id = displayed$id[row]
-        updatedRecord = getRecord()[[id]]
-        updatedRecord$events[['DELETED']] = list( status = 'DELETED',
-                                                  time = Sys.time(),
-                                                  longitude = NA,
-                                                  latitude = NA)
-
-        appendRecord(updatedRecord)
-        clear()
-      }
-    }
-  )
-
 
   observeEvent(
     input$about,
@@ -220,14 +121,6 @@ server = function(input, output, session) {
       shinyalert::shinyalert(title = 'About this app',
                              text = 'This app was created by Tom Kelly (<a target = "_new_" href = "https://github.com/tbrycekelly">Github Link</a>).<br /> To learn more about this app and how to set it up please visit the <a target = "_new_" href = "http://github.com/tbrycekelly/ShipLogger">project page</a>.',
                              html = T)
-    }
-  )
-
-  observeEvent(
-    input$refresh,
-    {
-      shiny::showNotification(type = 'message', session = session, 'Logger Running.')
-      clear()
     }
   )
 
@@ -244,13 +137,128 @@ server = function(input, output, session) {
         response = response[-1]
       }
     }
+
+    ## TODO: If no valid position found, handle this.
     if (abs(as.numeric(difftime(position$datetime, Sys.time(), units = 'mins'))) > 1) {
       shiny::showNotification(type = 'error', session = session, 'Last position update was >1 minute ago. Check NMEA feed if problem persists.')
     }
 
     ## Return
-  position
+    position
   })
+
+
+
+  # Handle clicking on a row link
+  observeEvent(input$entry_click, {
+    selected_id(input$entry_click)
+    updateTabsetPanel(session, "tabs", selected = "details_tab")
+  })
+
+
+  # Go back to main table
+  observeEvent(input$back_btn, {
+    session$sendCustomMessage("setHash", "")
+    updateTabsetPanel(session, "tabs", selected = "events_tab")
+  })
+
+  observe({
+    invalidateLater(500)
+    hash <- isolate(session$clientData$url_hash)
+
+    if (nchar(hash) < 5) {
+      updateTabsetPanel(session, "tabs", selected = "events_tab")
+    }
+  })
+  observe({
+    invalidateLater(500)
+    hash <- isolate(session$clientData$url_hash)
+
+    if (nchar(hash) > 5) {
+      updateTabsetPanel(session, "tabs", selected = "details_tab")
+    }
+  })
+
+
+  ## Updates the record with an updated entry based on button press
+  observeEvent(
+    input$button,
+    {
+      id = strsplit(input$button, '-')[[1]] # <group_id>-<actionNum>
+      recordID = id[1]
+      actionID = id[2]
+      record = Record()
+
+      if (actionID == '0') {
+        k = which(recordID == record$event_id)
+        if (length(k) == 1) {
+          addLog(paste0('User hit note button for ', recordID))
+          addLog(paste0('Updating note filed to ', record$notes[k]))
+          globalID <<- recordID
+          note_form("note_submit")
+          updateTextAreaInput(session = session, inputId = 'newnote', value = record$notes[k])
+        } else {
+          stop('More than one matching event?')
+        }
+
+      } else {
+        addLog(paste0('User hit button for ', recordID))
+
+        k = which(recordID == record$group_id)
+        if (length(k) < 1) { ## Sanity check
+          stop('Bad. Unique ID for button slection does not match any records in log???')
+        }
+
+        ## Determine the action
+        if (record$instrument[k[1]] %in% names(instruments)) {
+          action = instruments[[record$instrument[k[1]]]][as.numeric(actionID)]
+
+          newEntry = record[k[1],] ## Copy entry
+          pos = position()
+
+          ## Updated to new metadata
+          newEntry$event_id = ulid()
+          newEntry$action = action
+          newEntry$datetime = Sys.time()
+          newEntry$longitude = pos$lon
+          newEntry$latitude = pos$lat
+          newEntry$notes = ''
+          if (buttons[[action]]$terminal) {
+            newEntry$alive = F
+          }
+
+          updateRecord(newEntry)
+          clear()
+        } else {
+          stop('No matching instrument record for this action. Bad or impossible situation?')
+        }
+      }
+    }
+  )
+
+  observeEvent(
+    input$note_submit,
+    priority = 20,
+    {
+      addLog(paste0('Saving note.'))
+      record = Record()
+
+      #id = input$note_submit
+      id = globalID
+      addLog(paste0('Note for ', id))
+
+      k = which(record$event_id == id)
+      if (length(k) == 1) {
+        record$notes[k] = input$newnote
+        updateRecord(record[k,])
+      } else {
+        stop('No matching eventID. Error.')
+      }
+      removeModal()
+    }
+  )
+
+
 
 
   #### Outputs
@@ -268,7 +276,7 @@ server = function(input, output, session) {
     })
 
 
-  output$lon = renderText(
+  output$lon = renderUI(
     {
       pos = position()
       s = 'E'
@@ -276,96 +284,73 @@ server = function(input, output, session) {
         s = 'W'
         pos$lon = -pos$lon
       }
-      paste('Lon:', round(pos$lon, digits = 4), s)
+      lonMinutes = paste0(floor(pos$lon), '\u00B0', " ", round(60 * (pos$lon - floor(pos$lon)), 4), "' ", s)
+      lon = paste('Lon: ', round(pos$lon, digits = 4), s)
+      tagList(
+        tags$span(lon),
+        tags$span(lonMinutes, style = 'color:#cc5555; text-align:right;')
+      )
     }
   )
 
 
-  output$lat = renderText(
+  output$lat = renderUI(
     {
       pos = position()
+
       s = 'N'
       if (!is.na(pos$lat) & pos$lat < 0) {
         s = 'S'
         pos$lat = -pos$lat
       }
-      paste('Lat:', round(pos$lat, digits = 4), s)
+      latMinutes = paste0(floor(pos$lat), '\u00B0', " ", round(60 * (pos$lat - floor(pos$lat)), 4), "' ", s)
+      lat = paste('Lat: ', round(pos$lat, digits = 4), s)
+      tagList(
+        tags$span(lat),
+        tags$span(latMinutes, style = 'color:#cc5555; text-align:right; margin-left: 30px;')
+      )
     }
   )
 
-  output$age = renderText(
+  output$age = renderUI(
     {
       invalidateLater(settings$timeouts$uiRefresh * 1e3)
       pos = position()
       delta = abs(as.numeric(difftime(Sys.time(), pos$datetime, units = 'secs')))
-      paste('Fix Age:', round(delta), 'seconds.')
+
+      if (delta > settings$timeouts$positionUpdate * 2) {
+        return(tags$span(paste('Fix Age:', round(delta), 'seconds.'), style = 'color:red;'))
+      } else {
+        return(tags$span(paste('Fix Age:', round(delta), 'seconds.')))
+      }
     }
   )
 
 
   output$events = renderDT(
     {
-      tmp = currentRecord()
-      tmp = tmp[order(tmp$time, decreasing = T, na.last = T),]
+      tmp = Record()
+      tmp = tmp[order(tmp$datetime, decreasing = T, na.last = T),]
 
       ## Add buttons
-      tmp$button = ''
-      for (i in 1:nrow(tmp)) {
-        if (tmp$instrument[i] %in% names(instruments)) {
-          if (i == min(which(tmp$id == tmp$id[i]))) { # Make button only for the latest entry for an ID.
-            currentActions = unique(tmp$status[tmp$id == tmp$id[i]]) ## List of actions that have been performed: e.g. 'Queued', 'Deploy'
-            possibleActions = which(!instruments[[tmp$instrument[i]]] %in% currentActions) ## list of actions left to be performed: e.g. 'Deploy', 'Recover'
+      tmp$button = addEventButtons(tmp)
+      tmp$notebutton = addNoteButtons(tmp)
 
-            if (length(possibleActions) > 0) {
-              nextAction = instruments[[tmp$instrument[i]]][min(possibleActions)]
-              tmp$button[i] = shinyInput(FUN = actionButton,
-                                         id = paste0(tmp$id[i], '-', min(possibleActions)),
-                                         label = nextAction,
-                                         onclick = 'Shiny.setInputValue(\"button\", this.id, {priority: \"event\"})',
-                                         style=paste0("color: ", color[[nextAction]]$text, "; background-color: ", color[[nextAction]]$bkg, "; border-color: #2e6da4")
-              )
-            }
-          } else {
-            #tmp$station[i] = NA
-            #tmp$cast[i] = NA
-            #tmp$author[i] = NA
-          }
-        }
-      }
-
-      ## Add button for notes
-      tmp$notebutton = ''
-      for (i in 1:nrow(tmp)) {
-        if (nchar(tmp$notes[i]) > 0) {
-        tmp$notebutton[i] = paste0(shinyInput(FUN = actionButton,
-                                   id = paste0(tmp$id[i], '-0'),
-                                   label = 'See Notes',
-                                   onclick = 'Shiny.setInputValue(\"button\", this.id, {priority: \"event\"})',
-                                   style="color: #fff; background-color: #444; border-color: #2e6da4"
-            ), ' &#9733;')
-        } else {
-          tmp$notebutton[i] = shinyInput(FUN = actionButton,
-                                                id = paste0(tmp$id[i], '-0'),
-                                                label = 'See Notes',
-                                                onclick = 'Shiny.setInputValue(\"button\", this.id, {priority: \"event\"})',
-                                                style="color: #fff; background-color: #444; border-color: #2e6da4"
-          )
-        }
-      }
-
-      nice = data.frame(SystemTime = format.POSIXct(as.POSIXct(tmp$time), format = settings$datetime.format),
-                        Location = paste('Lat:', round(tmp$latitude, 4), '<br>Lon:', round(tmp$longitude, 4)),
-                        Action = tmp$button,
-                        Status = tmp$status,
+      ## Now make it pretty
+      nice = data.frame(SystemTime = format.POSIXct(as.POSIXct(tmp$datetime), format = settings$datetime.format),
                         Instrument = tmp$instrument,
+                        Status = tmp$action,
                         Station = tmp$station,
                         Cast = tmp$cast,
-                        Depth = tmp$depth,
                         Author = tmp$author,
+                        Action = tmp$button,
                         Note = tmp$notebutton)
-      k = !(nice$Status == 'Queued' & nice$Action == '' & nice$Instrument != '')
-      nice = nice[k,]
-      nice = nice[order(tmp$time, decreasing = T),]
+
+      for (i in 1:nrow(nice)) {
+        nice$SystemTime[i] = paste0('<a href="#', tmp$group_id[i], '">', nice$SystemTime[i], '</a>')
+      }
+      nice = nice[order(tmp$datetime, decreasing = T),]
+      nice = nice[!(nice$Action == '' & nice$Status == 'Queue'),]
       DT::datatable(nice,
                     editable = F,
                     filter = 'top',
@@ -373,15 +358,26 @@ server = function(input, output, session) {
                     selection = 'single',
                     escape = F,
                     extensions = 'RowGroup',
-                    options = list(rowGroup = list(dataSrc = 4)))
-    })
+                    options = list(
+                      rowGroup = list(dataSrc = 1),
+                      autoWidth = TRUE,
+                      columnDefs = list(
+                        list(width = '350px', targets = 6), # Buttons
+                        list(width = '25px', targets = 4), # cast
+                        list(width = '200px', targets = 0), # datetime
+                        list(width = '100px', targets = 7) # notes
+                      ),
+                      pageLength = 30
+                      )
+                    )
+    },
+    server = F)
 
-
+  # TODO
   observeEvent(
     input$history_cell_edit,
     {
-      record = getRecord()
-      tmp = parseLog(record)
+      record()
 
       row = input$history_cell_edit$row
       id = tmp$id[input$events_rows_selected]
@@ -404,7 +400,7 @@ server = function(input, output, session) {
         # Warn?
       }
 
-      appendRecord(updatedRecord)
+      updateRecord(updatedRecord)
       removeModal()
   })
 
@@ -449,63 +445,205 @@ server = function(input, output, session) {
       nmea = nmea[!is.na(nmea$lon),]
       nmea = nmea[order(nmea$datetime, decreasing = T),]
 
-      par(plt = c(0.12,1,0.1,1))
+      par(plt = c(0.15,0.95,0.1,0.95))
       map = plotBasemap(lon = nmea$lon[1],
                         lat = nmea$lat[1],
                         scale = 3^as.numeric(input$scale),
-                        land.col = 'black',
+                        land.col = '#222222',
                         frame = F)
-      map = addLatitude(map)
-      map = addLongitude(map)
-      map = addLine(map, nmea$lon, nmea$lat)
-      map = addPoints(map, lon = nmea$lon[1], lat = nmea$lat[1])
-      map = addScale(map)
+      if (settings$drawIsobath) {
+        addIsobath(map, c(1:9)*-1e3, col = 'darkgrey', lwd = 2)
+        addIsobath(map, c(1:3)*-250, col = 'darkgrey', lty = 2)
+        mtext('Dashed Isobath at 250, 500, 750 m; Solid every 1,000 m', cex = 0.7, adj = 0)
+      }
+      addLatitude(map)
+      addLongitude(map)
+      addLine(map, nmea$lon, nmea$lat)
+      addPoints(map, lon = nmea$lon[1], lat = nmea$lat[1], col = 'darkgreen', pch = 16, cex = 1.5)
+      addScale(map)
     }
   )
 
+
+
+  output$entry_header <- renderUI({
+    record = Record()
+    if (nchar(session$clientData$url_hash) > 1) {
+      record = record[record$group_id == gsub('#', '', session$clientData$url_hash),]
+    }
+
+    ## Clean up values
+    if (record$station[1] == '') {
+      record$station[1] = "none"
+    }
+    if (record$cast[1] == '') {
+      record$cast[1] = "none"
+    }
+    if (record$author[1] == '') {
+      record$author[1] = "none"
+    }
+    if (is.na(record$maximum_depth[1])) {
+      record$maximum_depth[1] = ""
+    } else {
+      record$maximum_depth[1] = paste0(record$maximum_depth[1])
+    }
+    if (is.na(record$bottom_depth[1] == '')) {
+      record$bottom_depth[1] = "unknown"
+    } else {
+      record$bottom_depth[1] = paste0('(', record$bottom_depth[1], 'm)')
+    }
+
+    ## Build Display
+
+    tagList(
+      h4('Event Details'),
+      fluidRow(
+        hr(),
+        tags$span(
+            column(
+              width = 2,
+              tags$span('Instrument:', class = "data-label"),
+              tags$span(record$instrument[1], class = "data-value")
+            ),
+            column(
+              width = 2,
+              tags$span('Station:', class = "data-label"),
+              tags$span(record$station[1], class = "data-value")
+            ),
+            column(
+              width = 2,
+              tags$span('Cast:', class = "data-label"),
+              tags$span(record$cast[1], class = "data-value")
+            ),
+            column(
+              width = 2,
+              tags$span('Depth:', class = "data-label"),
+              tags$span(paste0(record$maximum_depth[1], ' ', record$bottom_depth[1]), class = "data-value")
+            ),
+            column(
+              width = 4,
+              tags$span('Author:', class = "data-label"),
+              tags$span(record$author[1], class = "data-value")
+            )
+          ),
+        hr()
+        )
+      )
+  })
+
+  output$override_buttons = renderUI({
+    tmp = Record()
+    if (nchar(session$clientData$url_hash) > 1) {
+      tmp = tmp[tmp$group_id == gsub('#', '', session$clientData$url_hash),]
+    }
+
+    tmp$alive = T
+    tmp$action = 'Queue'
+    tmp$buttons = addEventButtons(tmp, TRUE)
+
+    tagList(
+      tags$span('New events: ', class = 'data-label'),
+      tags$span(HTML(tmp$buttons[1]))
+    )
+  })
+
+
+  output$entry_info = renderDT({
+    record = Record()
+    if (nchar(session$clientData$url_hash) > 1) {
+      record = record[record$group_id == gsub('#', '', session$clientData$url_hash),]
+    }
+    record$notebutton = addNoteButtons(record)
+
+    ## Now make it pretty
+    nice = data.frame(Status = record$action,
+                      SystemTime = format.POSIXct(as.POSIXct(record$datetime), format = settings$datetime.format),
+                      SystemTimeUTC = format.POSIXct(as.POSIXct(record$datetime), format = settings$datetime.format, tz = 'UTC'),
+                      Longitude = paste(round(record$longitude, 4)),
+                      Latitude = paste(round(record$latitude, 4)),
+                      Note = record$notebutton)
+
+    nice = nice[order(record$datetime, decreasing = F),]
+    DT::datatable(nice,
+                  autoHideNavigation = T,
+                  editable = F,
+                  filter = 'none',
+                  rownames = T,
+                  selection = 'single',
+                  escape = F,
+                  options = list(
+                    pageLength = 10
+                  ))
+  }, server = F)
+
+
+  output$entry_notes = renderUI({
+    record = Record()
+    if (nchar(session$clientData$url_hash) > 1) {
+      record = record[record$group_id == gsub('#', '', session$clientData$url_hash),]
+    }
+
+    notes = tags$div(tags$h4('Notes'), class = "kv-row")
+    for (i in 1:nrow(record)) {
+      if (nchar(record$note[i]) > 0) {
+        notes = paste0(notes,
+                       tags$div(
+                         tags$div(record$action[i], class = "key"), tags$div(record$note[i], class = "value"),
+                         class = "kv-row"
+                         )
+                       )
+      }
+    }
+
+    HTML(notes)
+  })
+
+
   #### Download options:
-  output$download.csv = downloadHandler(
+  output$download = downloadHandler(
     filename = function() {
-        paste0('ShipLogger ', gsub(':', '', format(Sys.time())), '.csv')
+        paste0('ShipLogger ', gsub(':', '', format(Sys.time())), '.sqlite')
       },
     content = function (file) {
-      addLog('Preparing csv download.')
-      tmp = parseLog(getRecord())
-      tmp$time = format(as.POSIXct(tmp$time), format = settings$datetime.format)
-      write.csv(tmp, file)
+      addLog('Preparing SQLite download.')
+      file.copy(settings$databaseFile, to = file)
     })
 
-
-  output$download.xlsx = downloadHandler(
+  output$downloadXLSX = downloadHandler(
     filename = function() {
       paste0('ShipLogger ', gsub(':', '', format(Sys.time())), '.xlsx')
     },
     content = function (file) {
       addLog('Preparing xlsx download.')
-      tmp = parseLog(getRecord())
-      tmp$time = format(as.POSIXct(tmp$time), format = settings$datetime.format)
+      tmp = readRecord()
+      tmp$datetime = format(as.POSIXct(tmp$datetime), format = settings$datetime.format)
+      tmp$datetimeUTC = format(as.POSIXct(tmp$datetime), format = settings$datetime.format, tz = 'UTC')
+
       openxlsx::write.xlsx(tmp, file)
     })
 
 
-  output$download.json = downloadHandler(
+  output$downloadJSON = downloadHandler(
     filename = function() {
       paste0('ShipLogger ', gsub(':', '', format(Sys.time())), '.json')
     },
     content = function (file) {
       addLog('Preparing JSON download.')
-      tmp = readRDS('log/log.rds')
+      tmp = readRecord()
+      tmp$datetime = format(as.POSIXct(tmp$datetime), format = settings$datetime.format)
+      tmp$datetimeUTC = format(as.POSIXct(tmp$datetime), format = settings$datetime.format, tz = 'UTC')
+
       jsonlite::write_json(tmp, file, pretty = T)
     })
 
 
-  output$download.pos = downloadHandler(
+  output$downloadPositions = downloadHandler(
     filename = function() {
       paste0('ShipLogger Position Record ', gsub(':', '', format(Sys.time())), '.json')
     },
     content = function (file) {
       addLog('Preparing Positions download.')
       response = jsonlite::read_json('http://localhost:8000/positions?by=60')
-      write(response, file)
+      write_json(response, path = file)
     })
 }

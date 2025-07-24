@@ -12,7 +12,7 @@ import uvicorn
 # Configuration
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s [%(levelname)s] %(message)s")
-DB_NAME = "messages.db"
+DB_NAME = "log/messages.db"
 
 
 def run_api():

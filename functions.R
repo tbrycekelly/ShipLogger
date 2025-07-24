@@ -8,6 +8,22 @@ library(openxlsx)
 library(SimpleMapper)
 
 
+
+addLog = function(msg, level = 'DEBUG') {
+  msg = paste0(isoTime(), '\t[', level, ']\t', msg)
+  message(msg)
+}
+
+isoTime = function(x = Sys.time(), rev = F) {
+
+  if (rev) {
+    return(format(x, format = "%Y-%m-%dT%H:%M:%OS", tz = 'UTC'))
+  }
+
+  as.POSIXct(x, format = "%Y-%m-%dT%H:%M:%OS", tz = 'UTC')
+}
+
+
 #' Programmatically create a Shiny input
 #'
 #' @param FUN function to create the input
@@ -22,14 +38,31 @@ shinyInput <- function(FUN, id, ...) {
   }, character(1))
 }
 
-shinyInput = function(FUN, id, ...) {
 
-  # for each of n, create a new input using the FUN function and convert
-  # to a character
-  vapply(id, function(i){
-    as.character(FUN(i, ...))
-  }, character(1))
+eventTemplate = function(n = 1) {
+  tmp = data.frame(
+    event_id = rep(NA, n), # links all records together
+    group_id = NA,
+    instrument = '',
+    action = 'Queue',
+    author = '',
+    station = '',
+    cast = '',
+    transect = '',
+    maximum_depth = NA,
+    bottom_depth = NA,
+    notes = '',
+    alive = TRUE,
+    datetime = Sys.time(),
+    longitude = NA,
+    latitude = NA
+  )
+  for (i in 1:n) {
+    tmp$group_id[i] = ulid()
+    tmp$event_id[i] = ulid()
+  }
 
+  tmp
 }
 
 #Label mandatory fields
@@ -43,108 +76,68 @@ labelMandatory = function(label) {
 appCSS = ".mandatory_star { color: red; }"
 
 
-QueuedRecord = function(path = 'log/log.rds') {
-  if (!file.exists(path)) {
-    tmp = blank.event()
-    tmp[[1]]$event = 0
-    tmp[[1]]$instrument = 'System'
-    tmp[[1]]$status = 'ENDED'
-    tmp[[1]]$notes = 'Queuedialized ShipLogger.'
+initShiplogger = function() {
 
-    saveRDS(tmp, path)
-  }
-}
+  if (!file.exists(settings$databaseFile)) {
+    con = dbConnect(RSQLite::SQLite(), settings$databaseFile)
 
-
-blank.event = function(n = 1) {
-  tmp = list()
-  for (i in 1:n) {
-    id = digest::digest(runif(1))
-    tmp[[id]] = list(
-      id = id,
-      instrument = '',
-      author = '',
-      station = '',
-      cast = '',
-      status = 'Queued',
-      events = list(
-        Queued = list(
-          status = 'Queued',
-          time = Sys.time(),
-          longitude = NA,
-          latitude = NA)
-      ),
-      depth = NA,
-      notes = ''
+    # Create a table with a TEXT primary key
+    dbExecute(con, "
+    CREATE TABLE IF NOT EXISTS events (
+      event_id TEXT PRIMARY KEY,
+      group_id TEXT,
+      instrument TEXT,
+      action TEXT,
+      author TEXT,
+      station TEXT,
+      cast TEXT,
+      transect TEXT,
+      maximum_depth REAL,
+      bottom_depth REAL,
+      notes TEXT,
+      alive BOOLEAN,
+      datetime REAL,
+      longitude REAL,
+      latitude REAL
     )
+  ")
+    dbDisconnect(con)
+
+    event = eventTemplate()
+    event$instrument = 'ShipLogger'
+    event$action = 'Started'
+    event$alive = F
+
+    updateRecord(event)
   }
-
-  tmp
 }
 
+## Take log entry message and write it to  log file.
+updateRecord = function(updatedRecord) {
 
-addLog = function(message) {
-  print(message)
+  params = as.list(updatedRecord)
+
+  con = dbConnect(RSQLite::SQLite(), settings$databaseFile)
+  dbExecute(con,
+  "INSERT OR REPLACE INTO events (event_id, group_id, instrument, action, author, station, cast, transect,
+    maximum_depth, bottom_depth, notes, alive, datetime, longitude, latitude) VALUES (:event_id, :group_id, :instrument,
+  :action, :author, :station, :cast, :transect, :maximum_depth, :bottom_depth, :notes, :alive, :datetime, :longitude, :latitude);",
+  params = params
+  )
+  dbDisconnect(con)
+  shiny::showNotification(ui = paste0('Event Logged.\nTransaction recorded to database at ', format(Sys.time(), format = settings$datetime.format)),
+                          duration = 5,
+                          type = 'message')
 }
 
-
-## Take log entry message and write it to JSON log file.
-appendRecord = function(entry, path = 'log/log.rds') {
-  newpath = paste0(path, ' ', gsub(':', '', Sys.time()), '.old')
-  if (file.copy(from = path, to = newpath)) {
-    tmp = readRDS(newpath)
-    tmp[[entry$id]] = entry
-    saveRDS(tmp, path)
-
-    shiny::showNotification(ui = 'Event Logged', duration = 5, type = 'message')
+readRecord = function(path = 'log/log.rds', group_id = NULL) {
+  con = dbConnect(RSQLite::SQLite(), settings$databaseFile)
+  if (!is.null(group_id)) {
+    result = dbGetQuery(con, "SELECT * FROM events WHERE group_id = :group_id", params = list(group_id = group_id))
   } else {
-    shiny::showNotification(ui = 'Could not create log backup!', duration = 5, type = 'error')
+    result = dbGetQuery(con, "SELECT * FROM events")
   }
-}
-
-
-flattenLog = function(record) {
-
-  count = 0
-  for (i in 1:length(record)) {
-    count = count + length(record[[i]]$events)
-  }
-
-  table = data.frame(id = rep(NA, count), instrument = NA, author = NA, station = NA, cast = NA, status = NA, time = NA, longitude = NA, latitude = NA, depth = NA, notes = NA)
-
-  for (i in 1:length(record)) {
-    if (length(record[[i]]$events) > 0) {
-      for (j in 1:length(record[[i]]$events)) {
-        table$id[count] = record[[i]]$id
-        table$instrument[count] = record[[i]]$instrument
-        table$author[count] = record[[i]]$author
-        table$station[count] = record[[i]]$station
-        table$cast[count] = record[[i]]$cast
-        table$status[count] = record[[i]]$events[[j]]$status
-        table$time[count] = record[[i]]$events[[j]]$time
-        table$longitude[count] = record[[i]]$events[[j]]$longitude
-        table$latitude[count] = record[[i]]$events[[j]]$latitude
-        table$depth[count] = record[[i]]$depth
-        table$notes[count] = record[[i]]$notes
-
-        count = count - 1
-      }
-    }
-  }
-
-  table
-}
-
-
-## Parse json log entries into data.frame
-parseLog = function(record, all = F) {
-  tmp = flattenLog(record)
-  if (!all) {
-    #tmp = tmp[!duplicated(tmp$id),] # Remove duplicated entries
-    l = unique(tmp$id[tmp$status == 'DELETED'])
-    tmp = tmp[!tmp$id %in% l,]
-  }
-  tmp
+  result
 }
 
 
@@ -167,14 +160,72 @@ inactivity = "function idleTimer() {
 }
 idleTimer();"
 
-
-isoTime = function(x, rev = F) {
-
-  if (rev) {
-    return(format(x, format = "%Y-%m-%dT%H:%M:%OS", tz = 'UTC'))
+getAvailableActions = function(instrument, performedActions = NULL) {
+  actions = c()
+  for (tmpAction in instruments[[instrument]]) { # Find all actions that haven't been used or are allowed to be used more than once.
+    if (!(tmpAction %in% performedActions) | !(buttons[[tmpAction]]$once)) {
+      actions = c(actions, tmpAction)
+    }
   }
 
-  as.POSIXct(x, format = "%Y-%m-%dT%H:%M:%OS", tz = 'UTC')
+  actions
 }
 
+addEventButtons = function(tmp, all = FALSE) {
+  tmp$button = ''
+  unseenID = unique(tmp$group_id)
+
+  for (i in 1:nrow(tmp)) {
+    if (tmp$group_id[i] %in% unseenID) {
+      unseenID = unseenID[unseenID != tmp$group_id[i]]
+
+      if (tmp$instrument[i] %in% names(instruments) & (tmp$alive[i] | all)) {
+        groupMembers = which(tmp$group_id == tmp$group_id[i])
+        availableActions = getAvailableActions(instrument = tmp$instrument[i],
+                                               performedActions = tmp$action[groupMembers])
+
+        ## Add available action buttons:
+        for (action in availableActions) {
+          k = which(action == instruments[[tmp$instrument[i]]])
+          tmp$button[i] = paste(tmp$button[i],
+                                shinyInput(FUN = actionButton,
+                                           id = paste0(tmp$group_id[i], '-', k), # <group_id>-<actionNum>
+                                           label = action,
+                                           onclick = 'Shiny.setInputValue(\"button\", this.id, {priority: \"event\"})',
+                                           style=paste0("color: ", buttons[[action]]$text, "; background-color: ", buttons[[action]]$bkg, "; border-color: #2e6da4")
+                                )
+          )
+        }
+      }
+    }
+  }
+
+  ## return
+  tmp$button
+}
+
+addNoteButtons = function(tmp) {
+  ## Add button for notes
+  tmp$notebutton = ''
+  for (i in 1:nrow(tmp)) {
+    if (nchar(tmp$notes[i]) > 0) {
+      sign = ' &#9733;'
+    } else {
+      sign = ''
+    }
+    tmp$notebutton[i] = paste0(
+      shinyInput(
+        FUN = actionButton,
+        id = paste0(tmp$event_id[i], '-0'),
+        label = 'Notes',
+        onclick = 'Shiny.setInputValue(\"button\", this.id, {priority: \"event\"})',
+        style="color: #fff; background-color: #444; border-color: #2e6da4"
+      ),
+      sign
+    )
+    }
+
+  ## return
+  tmp$notebutton
+}
 
