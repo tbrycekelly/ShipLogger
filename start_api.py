@@ -1,6 +1,4 @@
 import threading
-import socket
-import serial
 import sqlite3
 import time
 import datetime
