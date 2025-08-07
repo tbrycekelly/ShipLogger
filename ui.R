@@ -92,7 +92,6 @@ ui = dashboardPage(
 
 .key-value-box .kv-row {
   display: flex;
-  justify-content: space-between;
   margin-bottom: 8px;
 }
 
@@ -110,7 +109,6 @@ border-top: 1px solid #333;
 .key-value-box .value {
   color: #000;
   text-align: left;
-  white-space: nowrap;
 }
 
 .key-value-box .kv-row:hover {

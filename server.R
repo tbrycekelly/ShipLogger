@@ -373,36 +373,6 @@ server = function(input, output, session) {
     },
     server = F)
 
-  # TODO
-  observeEvent(
-    input$history_cell_edit,
-    {
-      record()
-
-      row = input$history_cell_edit$row
-      id = tmp$id[input$events_rows_selected]
-      colname = c('time', 'latitude', 'longitude', 'status', 'station', 'cast', 'depth', 'author')[input$history_cell_edit$col + 1]
-      status = tmp$status[row]
-      updatedRecord = record[[id]]
-      addLog(paste0('Updating entry ', row, ' of ', colname, ' for entry ', id, '.'))
-      addLog(paste0('New value is ', input$history_cell_edit$value))
-
-      if (colname == 'time') {
-        updatedRecord$events[[status]][[colname]] = as.POSIXct(input$history_cell_edit$value, format = settings$datetime.format)
-      } else if (colname %in% c('time', 'latitude', 'longitude')) {
-        updatedRecord$events[[status]][[colname]] = input$history_cell_edit$value
-      } else if (colname %in% c('station', 'cast', 'depth', 'author')) {
-        updatedRecord[[colname]] = input$history_cell_edit$value
-      } else if (colname == 'status') {
-        updatedRecord$events[[status]]$status = input$history_cell_edit$value
-        names(updatedRecord$events)[which(names(updatedRecord$events) == status)] = input$history_cell_edit$value
-      } else {
-        # Warn?
-      }
-
-      updateRecord(updatedRecord)
-      removeModal()
-  })
 
   output$history = renderDT({
 
@@ -563,10 +533,10 @@ server = function(input, output, session) {
                       Latitude = paste(round(record$latitude, 4)),
                       Note = record$notebutton)
 
-    nice = nice[order(record$datetime, decreasing = F),]
+    nice = nice[order(record$datetime, decreasing = T),]
     DT::datatable(nice,
                   autoHideNavigation = T,
-                  editable = F,
+                  editable = T,
                   filter = 'none',
                   rownames = T,
                   selection = 'single',
@@ -577,21 +547,48 @@ server = function(input, output, session) {
   }, server = F)
 
 
+  observeEvent( # catch edits to entries
+    input$entry_info_cell_edit,
+    {
+      record = Record()
+      record = record[record$group_id == gsub('#', '', session$clientData$url_hash),]
+      row = input$entry_info_cell_edit$row
+      col = input$entry_info_cell_edit$col
+      message(row, ' ', col)
+
+      entry = record[nrow(record) - row + 1,]
+
+      if (col == 1) {
+        entry$action = input$entry_info_cell_edit$value
+      } else if (col == 2) {
+        entry$datetime = isoTime(as.POSIXct(input$entry_info_cell_edit$value, tz = ''))
+      } else if (col == 3) {
+        entry$datetime = isoTime(as.POSIXct(input$entry_info_cell_edit$value, tz = 'UTC'))
+      } else if (col == 4) {
+        entry$longitude = as.numeric(input$entry_info_cell_edit$value)
+      } else if (col == 5) {
+        entry$latitude = as.numeric(input$entry_info_cell_edit$value)
+      }
+
+      updateRecord(entry)
+    })
+
+
   output$entry_notes = renderUI({
     record = Record()
     if (nchar(session$clientData$url_hash) > 1) {
       record = record[record$group_id == gsub('#', '', session$clientData$url_hash),]
     }
 
-    notes = tags$div(tags$h4('Notes'), class = "kv-row")
+    notes = paste0(tags$div(tags$h4('Notes'), class = "kv-row"))
     for (i in 1:nrow(record)) {
-      if (nchar(record$note[i]) > 0) {
-        notes = paste0(notes,
-                       tags$div(
-                         tags$div(record$action[i], class = "key"), tags$div(record$note[i], class = "value"),
-                         class = "kv-row"
+        if (nchar(record$note[i]) > 0) {
+          notes = paste0(notes,
+                         tags$div(
+                           tags$div(record$action[i], class = "key"), tags$div(record$note[i], class = "value"),
+                           class = "kv-row"
+                           )
                          )
-                       )
       }
     }
 
