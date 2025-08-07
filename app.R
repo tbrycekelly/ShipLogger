@@ -12,7 +12,7 @@ library(SimpleBathy)
 
 source('config.R')
 source('functions.R')
-
+initShiplogger()
 #system('python3 ./message_logger.py', intern = F, wait = F)
 
 # Run App
