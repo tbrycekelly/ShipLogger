@@ -384,7 +384,7 @@ server = function(input, output, session) {
       addLog(paste('Searching for the history of event', id, '.'))
       tmp = tmp[tmp$id == id,]
 
-      nice = data.frame(SystemTime = format.POSIXct(as.POSIXct(tmp$time), format = settings$datetime.format),
+      nice = data.frame(SystemTime = format.POSIXct(as.POSIXct(tmp$time, origin = '1970-01-01 00:00:00'), format = settings$datetime.format),
                         Latitude = round(tmp$latitude, 4),
                         Longitude = round(tmp$longitude, 4),
                         Status = tmp$status,
@@ -527,8 +527,8 @@ server = function(input, output, session) {
 
     ## Now make it pretty
     nice = data.frame(Status = record$action,
-                      SystemTime = format.POSIXct(as.POSIXct(record$datetime), format = settings$datetime.format),
-                      SystemTimeUTC = format.POSIXct(as.POSIXct(record$datetime), format = settings$datetime.format, tz = 'UTC'),
+                      SystemTime = format.POSIXct(as.POSIXct(record$datetime, origin = '1970-01-01 00:00:00'), format = settings$datetime.format),
+                      SystemTimeUTC = format.POSIXct(as.POSIXct(record$datetime, origin = '1970-01-01 00:00:00'), format = settings$datetime.format, tz = 'UTC'),
                       Longitude = paste(round(record$longitude, 4)),
                       Latitude = paste(round(record$latitude, 4)),
                       Note = record$notebutton)
@@ -561,9 +561,9 @@ server = function(input, output, session) {
       if (col == 1) {
         entry$action = input$entry_info_cell_edit$value
       } else if (col == 2) {
-        entry$datetime = isoTime(as.POSIXct(input$entry_info_cell_edit$value, tz = ''))
+        entry$datetime = isoTime(as.POSIXct(input$entry_info_cell_edit$value, tz = '', origin = '1970-01-01 00:00:00'))
       } else if (col == 3) {
-        entry$datetime = isoTime(as.POSIXct(input$entry_info_cell_edit$value, tz = 'UTC'))
+        entry$datetime = isoTime(as.POSIXct(input$entry_info_cell_edit$value, tz = 'UTC', origin = '1970-01-01 00:00:00'))
       } else if (col == 4) {
         entry$longitude = as.numeric(input$entry_info_cell_edit$value)
       } else if (col == 5) {
@@ -613,8 +613,8 @@ server = function(input, output, session) {
     content = function (file) {
       addLog('Preparing xlsx download.')
       tmp = readRecord()
-      tmp$datetime = format(as.POSIXct(tmp$datetime), format = settings$datetime.format)
-      tmp$datetimeUTC = format(as.POSIXct(tmp$datetime), format = settings$datetime.format, tz = 'UTC')
+      tmp$datetime = format(as.POSIXct(tmp$datetime, origin = '1970-01-01 00:00:00'), format = settings$datetime.format)
+      tmp$datetimeUTC = format(as.POSIXct(tmp$datetime, origin = '1970-01-01 00:00:00'), format = settings$datetime.format, tz = 'UTC')
 
       openxlsx::write.xlsx(tmp, file)
     })
@@ -627,8 +627,8 @@ server = function(input, output, session) {
     content = function (file) {
       addLog('Preparing JSON download.')
       tmp = readRecord()
-      tmp$datetime = format(as.POSIXct(tmp$datetime), format = settings$datetime.format)
-      tmp$datetimeUTC = format(as.POSIXct(tmp$datetime), format = settings$datetime.format, tz = 'UTC')
+      tmp$datetime = format(as.POSIXct(tmp$datetime, origin = '1970-01-01 00:00:00'), format = settings$datetime.format)
+      tmp$datetimeUTC = format(as.POSIXct(tmp$datetime, origin = '1970-01-01 00:00:00'), format = settings$datetime.format, tz = 'UTC')
 
       jsonlite::write_json(tmp, file, pretty = T)
     })
