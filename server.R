@@ -553,6 +553,8 @@ server = function(input, output, session) {
     {
       record = Record()
       record = record[record$group_id == gsub('#', '', session$clientData$url_hash),]
+      record = record[order(record$datetime, decreasing = T, na.last = T),]
+
       row = input$entry_info_cell_edit$row
       col = input$entry_info_cell_edit$col
       message(row, ' ', col)
