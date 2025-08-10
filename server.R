@@ -337,7 +337,7 @@ server = function(input, output, session) {
       tmp$notebutton = addNoteButtons(tmp)
 
       ## Now make it pretty
-      nice = data.frame(SystemTime = format.POSIXct(as.POSIXct(tmp$datetime), format = settings$datetime.format),
+      nice = data.frame(SystemTime = format.POSIXct(as.POSIXct(tmp$datetime, origin = '1970-01-01 00:00:00'), format = settings$datetime.format),
                         Instrument = tmp$instrument,
                         Status = tmp$action,
                         Station = tmp$station,
