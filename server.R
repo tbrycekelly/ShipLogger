@@ -542,6 +542,7 @@ server = function(input, output, session) {
                   selection = 'single',
                   escape = F,
                   options = list(
+                    ordering = F,
                     pageLength = 10
                   ))
   }, server = F)
@@ -556,7 +557,7 @@ server = function(input, output, session) {
       col = input$entry_info_cell_edit$col
       message(row, ' ', col)
 
-      entry = record[nrow(record) - row + 1,]
+      entry = record[row,]
 
       if (col == 1) {
         entry$action = input$entry_info_cell_edit$value
