@@ -141,7 +141,10 @@ server = function(input, output, session) {
 
     ## TODO: If no valid position found, handle this.
     if (abs(as.numeric(difftime(position$datetime, Sys.time(), units = 'mins'))) > 1) {
-      shiny::showNotification(type = 'error', session = session, 'Last position update was >1 minute ago. Check NMEA feed if problem persists.')
+      shiny::showNotification(type = 'error',
+                              session = session,
+                              'Last position update was >1 minute ago. Check NMEA feed if problem persists.',
+                              duration = settings$timeouts$positionUpdate/2)
     }
 
     ## Return
@@ -367,13 +370,14 @@ server = function(input, output, session) {
                     escape = F,
                     extensions = 'RowGroup',
                     options = list(
-                      rowGroup = list(dataSrc = 2),
+                      rowGroup = list(dataSrc = 4),
                       autoWidth = TRUE,
                       columnDefs = list(
                         list(width = '350px', targets = 7), # Buttons
                         list(width = '25px', targets = 5), # cast
                         list(width = '200px', targets = 1), # datetime
-                        list(width = '100px', targets = 8) # notes
+                        list(width = '120px', targets = 6), # author
+                        list(width = '90px', targets = 8) # notes
                       ),
                       pageLength = 30
                       )

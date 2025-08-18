@@ -28,7 +28,7 @@ ui = dashboardPage(
     h4(uiOutput("lon", container = span)),
     br(),
     plotOutput('cruisemap'),
-    sliderInput('scale', 'Map Zoom', min = 1, max = 8, step = 0.25, value = 4),
+    sliderInput('scale', 'Map Zoom', min = 1, max = 8, step = 0.5, value = 4),
     checkboxInput('drawIsobath', label = 'Draw Isobaths?', value = settings$drawIsobath),
     hr(),
     h5('Export Options'),
@@ -158,13 +158,10 @@ border-top: 1px solid #333;
                                width = '35em')
           ),
           column(
-            width = 2,
-            textInput('depthMaximum', label = 'Deployed Depth (m)', width = '10em')
-          ),
-          column(
-            width = 3,
+            width = 5,
+            textInput('depthMaximum', label = 'Deployed Depth (m)', width = '10em'),
             textAreaInput("notes", label = 'Entry Notes',
-                          width = '45em', height = '7em'),
+                          width = '45em', height = '4em')
           ),
           column(
             width = 2,
