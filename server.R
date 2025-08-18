@@ -106,7 +106,8 @@ server = function(input, output, session) {
       entry$latitude = position()$lat
       entry$datetime = Sys.time()
       entry$event_id = ulid()
-      entry$bottom_depth = as.numeric(input$depthBottom)
+      entry$bottom_depth = NA
+      #entry$bottom_depth = as.numeric(input$depthBottom)
       entry$maximum_depth = as.numeric(input$depthMaximum)
 
       addLog(paste0('Logging user event ', entry$group_id,'.'))
@@ -337,18 +338,25 @@ server = function(input, output, session) {
       tmp$notebutton = addNoteButtons(tmp)
 
       ## Now make it pretty
-      nice = data.frame(SystemTime = format.POSIXct(as.POSIXct(tmp$datetime, origin = '1970-01-01 00:00:00'), format = settings$datetime.format),
-                        Instrument = tmp$instrument,
-                        Status = tmp$action,
-                        Station = tmp$station,
-                        Cast = tmp$cast,
-                        Author = tmp$author,
-                        Action = tmp$button,
-                        Note = tmp$notebutton)
+      nice = data.frame(
+        Event = substr(tmp$group_id, 22, 26),
+        SystemTime = format.POSIXct(as.POSIXct(tmp$datetime, origin = '1970-01-01 00:00:00'), format = settings$datetime.format),
+        Instrument = tmp$instrument,
+        Status = tmp$action,
+        Station = tmp$station,
+        Cast = tmp$cast,
+        Author = tmp$author,
+        Action = tmp$button,
+        Note = tmp$notebutton
+        )
+
 
       for (i in 1:nrow(nice)) {
-        nice$SystemTime[i] = paste0('<a href="#', tmp$group_id[i], '">', nice$SystemTime[i], '</a>')
+        nice$Event[i] = paste0('<a href="#', tmp$group_id[i], '">', nice$Event[i], '</a>')
       }
+      #for (i in 1:nrow(nice)) {
+      #  nice$SystemTime[i] = paste0('<a href="#', tmp$group_id[i], '">', nice$SystemTime[i], '</a>')
+      #}
       nice = nice[order(tmp$datetime, decreasing = T),]
       nice = nice[!(nice$Action == '' & nice$Status == 'Queue'),]
       DT::datatable(nice,
@@ -359,13 +367,13 @@ server = function(input, output, session) {
                     escape = F,
                     extensions = 'RowGroup',
                     options = list(
-                      rowGroup = list(dataSrc = 1),
+                      rowGroup = list(dataSrc = 2),
                       autoWidth = TRUE,
                       columnDefs = list(
-                        list(width = '350px', targets = 6), # Buttons
-                        list(width = '25px', targets = 4), # cast
-                        list(width = '200px', targets = 0), # datetime
-                        list(width = '100px', targets = 7) # notes
+                        list(width = '350px', targets = 7), # Buttons
+                        list(width = '25px', targets = 5), # cast
+                        list(width = '200px', targets = 1), # datetime
+                        list(width = '100px', targets = 8) # notes
                       ),
                       pageLength = 30
                       )
@@ -404,8 +412,8 @@ server = function(input, output, session) {
 
       ## API Query
       earliestTime = isoTime(Sys.time() - 86400 * as.numeric(input$days), rev = T)
-      response = jsonlite::read_json(paste0('http://localhost:8000/positions?limit=100000&by=120&since=', earliestTime))
-      response = c(response, jsonlite::read_json(paste0('http://localhost:8000/positions?limit=360&by=10&since=', earliestTime)))
+      response = jsonlite::read_json(paste0('http://localhost:8000/positions?limit=100000&by=300'))
+      response = c(response, jsonlite::read_json(paste0('http://localhost:8000/positions?limit=30&by=10')))
       nmea = data.frame(datetime = NA, lon = rep(NA, length(response)), lat = NA)
       for (i in 1:length(response)) {
         nmea$datetime[i] = response[[i]]$timestamp
@@ -418,10 +426,10 @@ server = function(input, output, session) {
       par(plt = c(0.15,0.95,0.1,0.95))
       map = plotBasemap(lon = nmea$lon[1],
                         lat = nmea$lat[1],
-                        scale = 3^as.numeric(input$scale),
+                        scale = 3^(8-as.numeric(input$scale)),
                         land.col = '#222222',
                         frame = F)
-      if (settings$drawIsobath) {
+      if (input$drawIsobath) {
         addIsobath(map, c(1:9)*-1e3, col = 'darkgrey', lwd = 2)
         addIsobath(map, c(1:3)*-250, col = 'darkgrey', lty = 2)
         mtext('Dashed Isobath at 250, 500, 750 m; Solid every 1,000 m', cex = 0.7, adj = 0)
@@ -457,49 +465,73 @@ server = function(input, output, session) {
     } else {
       record$maximum_depth[1] = paste0(record$maximum_depth[1])
     }
-    if (is.na(record$bottom_depth[1] == '')) {
-      record$bottom_depth[1] = "unknown"
-    } else {
-      record$bottom_depth[1] = paste0('(', record$bottom_depth[1], 'm)')
-    }
+    #if (is.na(record$bottom_depth[1] == '')) { # Bottom Depth TODO from NMEA.
+    #  record$bottom_depth[1] = "unknown"
+    #} else {
+    #  record$bottom_depth[1] = paste0('(', record$bottom_depth[1], 'm)')
+    #}
 
     ## Build Display
 
     tagList(
-      h4('Event Details'),
+      h3(paste0('Event ', substr(record$group_id[1], 22, 26))),
       fluidRow(
-        hr(),
+        #hr(),
         tags$span(
-            column(
-              width = 2,
-              tags$span('Instrument:', class = "data-label"),
-              tags$span(record$instrument[1], class = "data-value")
-            ),
-            column(
-              width = 2,
-              tags$span('Station:', class = "data-label"),
-              tags$span(record$station[1], class = "data-value")
-            ),
-            column(
-              width = 2,
-              tags$span('Cast:', class = "data-label"),
-              tags$span(record$cast[1], class = "data-value")
-            ),
-            column(
-              width = 2,
-              tags$span('Depth:', class = "data-label"),
-              tags$span(paste0(record$maximum_depth[1], ' ', record$bottom_depth[1]), class = "data-value")
-            ),
-            column(
-              width = 4,
-              tags$span('Author:', class = "data-label"),
-              tags$span(record$author[1], class = "data-value")
-            )
+          column(
+            width = 2,
+            textInput('detail.instrument', label = 'Instrument: ', value = record$instrument[1]),
           ),
-        hr()
+          column(
+            width = 2,
+            textInput('detail.station', label = 'Station: ', value = record$station[1])
+          ),
+          column(
+            width = 2,
+            textInput('detail.cast', label = 'Cast: ', value = record$cast[1])
+          ),
+          column(
+            width = 2,
+            textInput('detail.depth', label = 'Max Depth: ', value = record$maximum_depth[1])
+          ),
+          column(
+            width = 4,
+            textInput('detail.author', label = 'Author: ', value = record$author[1])
+          ),
+          column(
+            width = 2,
+            tags$span(actionButton('detail.edit', 'Update'))
+          )
         )
       )
+    )
   })
+
+  observeEvent(
+    input$detail.edit,
+    {
+      tmp = Record()
+      if (nchar(session$clientData$url_hash) > 1) {
+        tmp = tmp[tmp$group_id == gsub('#', '', session$clientData$url_hash),]
+      } else {
+        stop("Invalid edit value?")
+      }
+
+      # apply update to fields
+      tmp$instrument = input$detail.instrument
+      tmp$author = input$detail.author
+      tmp$station = input$detail.station
+      tmp$cast = input$detail.cast
+      tmp$maximum_depth = input$detail.depth
+
+      # save updated records:
+      for (i in 1:nrow(tmp)) {
+        updateRecord(tmp[i,])
+      }
+      shiny::showNotification(ui = paste0('Metadata Updated.\nTransaction recorded to database at ', format(Sys.time(), format = settings$datetime.format)),
+                              duration = 5,
+                              type = 'message')
+    })
 
   output$override_buttons = renderUI({
     tmp = Record()

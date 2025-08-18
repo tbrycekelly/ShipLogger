@@ -7,7 +7,7 @@ settings = list(
   datetime.format = '%Y-%m-%d  %H:%M:%S %Z',
   timeouts = list(
     logRefresh = 2, #sec
-    pageRefresh = 600, #sec
+    pageRefresh = 60 * 60, #sec
     positionUpdate = 5, #sec
     uiRefresh = 1, #sec
     mapRefresh = 60 #sc
@@ -15,7 +15,7 @@ settings = list(
   counters = list(
     positionCounter = 10
   ),
-  drawIsobath = TRUE,
+  drawIsobath = F,
   databaseFile = 'log/events.db'
 )
 

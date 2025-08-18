@@ -18,7 +18,7 @@ ui = dashboardPage(
   skin = 'black',
 
   sidebar = dashboardSidebar(minified = F,
-    width = 400,
+    width = 340,
     h5("Current time: "),
     h4(textOutput("currentTime", container = span)),
     h4(textOutput("currentTime.local", container = span)),
@@ -28,8 +28,8 @@ ui = dashboardPage(
     h4(uiOutput("lon", container = span)),
     br(),
     plotOutput('cruisemap'),
-    sliderInput('scale', 'Map Zoom', min = 0, max = 8, step = 0.25, value = 4),
-    sliderInput('days', 'Map Duration (days)', min = 1, max = 60, step = 1, value = 60),
+    sliderInput('scale', 'Map Zoom', min = 1, max = 8, step = 0.25, value = 4),
+    checkboxInput('drawIsobath', label = 'Draw Isobaths?', value = settings$drawIsobath),
     hr(),
     h5('Export Options'),
     div(
@@ -143,8 +143,8 @@ border-top: 1px solid #333;
           column(
             width = 2,
             shiny::textInput("stn", label = 'Station ID', width = '10em'),
-            shiny::textInput("cast", label = 'Cast Number', width = '10em'),
-            shiny::textInput("transect", label = 'Transect Name', width = '10em')
+            shiny::textInput("cast", label = 'Cast Number', width = '10em')
+            #shiny::textInput("transect", label = 'Transect Name', width = '10em')
           ),
           column(
             width = 4,
@@ -159,7 +159,6 @@ border-top: 1px solid #333;
           ),
           column(
             width = 2,
-            textInput('depthBottom', label = 'Bottom Depth (m)', width = '10em'),
             textInput('depthMaximum', label = 'Deployed Depth (m)', width = '10em')
           ),
           column(

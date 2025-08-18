@@ -29,7 +29,7 @@ isoTime = function(x = Sys.time(), rev = F) {
 #' @param FUN function to create the input
 #' @param n number of inputs to be created
 #' @param id ID prefix for each input
-shinyInput <- function(FUN, id, ...) {
+shinyInput = function(FUN, id, ...) {
 
   # for each of n, create a new input using the FUN function and convert
   # to a character
