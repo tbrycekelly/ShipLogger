@@ -47,6 +47,7 @@ ui = dashboardPage(
 
   body = dashboardBody(
     tags$head(
+      tags$link(rel = "icon", type = "image/png", href = "favicon.png"),
       tags$style(
         HTML("
       .nav-tabs { display: none; }

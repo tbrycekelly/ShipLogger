@@ -122,9 +122,9 @@ if __name__ == "__main__":
     # Threads for each input:
     threads = [
         #threading.Thread(target=serial_listener, kwargs={"port": "COM3"}, daemon=True),
-        threading.Thread(target=tcp_listener, kwargs={"port": 1000}, daemon=True),
-        threading.Thread(target=udp_listener, kwargs={"port": 53121}, daemon=True),
-        threading.Thread(target=tcp_client_listener, kwargs={"server_port": 1000}, daemon=True),
+        #threading.Thread(target=tcp_listener, kwargs={"port": 1000}, daemon=True),
+        threading.Thread(target=udp_listener, kwargs={"port": 1457}, daemon=True),
+        #threading.Thread(target=tcp_client_listener, kwargs={"server_port": 1000}, daemon=True),
         threading.Thread(target=run_api, daemon=True)
     ]
 

@@ -102,7 +102,7 @@ Information in the log is stored as a text file with each entry saved as a JSON 
 
 
 ## Supported by
-This project was supported by the National Science Foundation (Awards 1736906 and 2205954) and by the University of Alaska Fairbanks. ShipLogger has been used on several oceanographic voyages and remains under active development. 
+This project was supported by the National Science Foundation (Awards 2242222, 1736906 and 2205954) and by the University of Alaska Fairbanks. ShipLogger has been used on several oceanographic voyages and remains under active development. 
 
 We make no guarantees and promises about the function of this software. All liability for the use and misuse of this product remains with the end user.
 
